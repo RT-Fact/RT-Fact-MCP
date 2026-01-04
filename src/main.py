@@ -1,7 +1,8 @@
 import os
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 load_dotenv()
 
@@ -24,3 +25,10 @@ async def health_check():
         "version": "0.1.0",
         "env_check": "loaded" if has_api_key else "missing_keys",
     }
+
+
+@app.post("/mcp")
+async def mcp_endpoint(request: Request) -> JSONResponse:
+    """MCP 프로토콜 엔드포인트 (JSON-RPC 2.0) - 스켈레톤"""
+    # TODO: 구현 예정
+    return JSONResponse(content={"error": "Not implemented"})
