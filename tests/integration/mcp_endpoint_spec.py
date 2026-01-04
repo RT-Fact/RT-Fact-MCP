@@ -19,7 +19,7 @@ async def test_tools_list_returns_factcheck_tool():
     data = response.json()
     assert data["jsonrpc"] == "2.0"
     assert data["id"] == 1
-    assert data["error"] is None
+    assert "error" not in data  # 성공 응답에는 error 필드 없음
     assert len(data["result"]["tools"]) == 1
     assert data["result"]["tools"][0]["name"] == "factcheck"
     assert "inputSchema" in data["result"]["tools"][0]
@@ -42,7 +42,7 @@ async def test_tools_call_returns_mock_result():
     assert response.status_code == 200
     data = response.json()
     assert data["id"] == 2
-    assert data["error"] is None
+    assert "error" not in data  # 성공 응답에는 error 필드 없음
     assert "content" in data["result"]
     assert data["result"]["content"][0]["type"] == "text"
 

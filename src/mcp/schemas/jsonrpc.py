@@ -22,7 +22,7 @@ class JsonRpcError(BaseModel):
     data: dict[str, JsonValue] | None = None
 
 
-class JsonRpcSuccessResponse(BaseModel):
+class JsonRpcSuccessResponse(BaseModel): # 의문: Tool의 종류가 늘여나면 result의 개수가 계속 늘어날텐데 이게 맞나?
     """JSON-RPC 2.0 성공 응답"""
 
     jsonrpc: str = "2.0"
