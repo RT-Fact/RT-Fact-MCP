@@ -17,7 +17,6 @@ from mcp.router import route_request
 
 _ = load_dotenv()
 
-# 앱 초기화
 app = FastAPI(title="RT-Fact MCP Server")
 
 
@@ -42,8 +41,6 @@ async def health_check():
 async def mcp_endpoint(request: Request) -> JSONResponse:
     """MCP 프로토콜 엔드포인트 (JSON-RPC 2.0)"""
 
-    # 1. JSON 파싱 (Actionable Error)
-    # 시스템 경계: request.json()은 Any 반환 → 바로 아래 Pydantic 검증으로 타입 안전성 확보
     try:
         body = await request.json()
     except JSONDecodeError:
@@ -56,11 +53,9 @@ async def mcp_endpoint(request: Request) -> JSONResponse:
         )
         return JSONResponse(content=error_response.model_dump())
 
-    # 2. JsonRpcRequest 검증 (Actionable Error)
     try:
         rpc_request = JsonRpcRequest.model_validate(body)
     except ValidationError:
-        # 타입 안전한 id 추출 (isinstance로 타입 가드 후 직접 접근)
         request_id: int | str | None = None
         if isinstance(body, dict):
             raw_id = body.get("id")
@@ -75,10 +70,8 @@ async def mcp_endpoint(request: Request) -> JSONResponse:
         )
         return JSONResponse(content=error_response.model_dump())
 
-    # 3. 라우팅
     result, error = route_request(rpc_request.method, rpc_request.params)
 
-    # 4. 응답 생성 (Pydantic 모델 활용)
     if error:
         code, message = error
         error_response = JsonRpcErrorResponse(

@@ -1,8 +1,19 @@
 """MCP 프로토콜 핸들러 (SRP: 도구 정의 및 핸들링만 담당)"""
 
-from mcp.schemas.mcp import ToolDefinition, ToolsListResult
+from pydantic import ValidationError
 
-# Agent-Centric: LLM이 언제/어떻게 사용할지 명확히 설명
+from mcp.errors import JsonRpcErrorCode
+from mcp.schemas.mcp import (
+    ContentItem,
+    ToolCallParams,
+    ToolDefinition,
+    ToolsCallResult,
+    ToolsListResult,
+)
+from mcp.schemas.tools.factcheck import FactcheckArguments
+
+McpError = tuple[int, str]  # (code, message)
+
 FACTCHECK_TOOL = ToolDefinition(
     name="factcheck",
     description=(
@@ -38,3 +49,38 @@ FACTCHECK_TOOL = ToolDefinition(
 def handle_tools_list() -> ToolsListResult:
     """tools/list 요청 처리 - 사용 가능한 도구 목록 반환"""
     return ToolsListResult(tools=[FACTCHECK_TOOL])
+
+
+def handle_tools_call(
+    params: ToolCallParams,
+) -> tuple[ToolsCallResult | None, McpError | None]:
+    """tools/call 요청 처리 - 도구 실행 및 결과 반환
+
+    Returns:
+        (result, None): 성공
+        (None, (code, message)): 실패 (Actionable Error)
+    """
+    if params.name != "factcheck":
+        return None, (
+            JsonRpcErrorCode.INVALID_PARAMS,
+            f"Unknown tool '{params.name}'. Available: factcheck",
+        )
+
+    try:
+        args = FactcheckArguments.model_validate(params.arguments)
+    except ValidationError as e:
+        errors = "; ".join(f"{err['loc'][0]}: {err['msg']}" for err in e.errors())
+        return None, (
+            JsonRpcErrorCode.INVALID_PARAMS,
+            f"Invalid arguments for 'factcheck': {errors}. "
+            "Required: text (string). Optional: whitelist, blacklist (array of domains)",
+        )
+
+    # 3. Mock 결과 반환 (실제 파이프라인은 MCP-03에서 구현)
+    mock_result = (
+        f"[Mock] 팩트체크 요청 수신: '{args.text[:50]}...'"
+        if len(args.text) > 50
+        else f"[Mock] 팩트체크 요청 수신: '{args.text}'"
+    )
+
+    return ToolsCallResult(content=[ContentItem(type="text", text=mock_result)]), None

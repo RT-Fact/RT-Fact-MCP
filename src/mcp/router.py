@@ -1,12 +1,11 @@
 """MCP 메서드 라우터 (SRP: 요청 라우팅만 담당)"""
 
-from pydantic import JsonValue
+from pydantic import JsonValue, ValidationError
 
 from mcp.errors import JsonRpcErrorCode
-from mcp.handlers import handle_tools_list
-from mcp.schemas.mcp import ToolsCallResult, ToolsListResult
+from mcp.handlers import handle_tools_call, handle_tools_list
+from mcp.schemas.mcp import ToolCallParams, ToolsCallResult, ToolsListResult
 
-# 타입 정의: Task 4 대비
 McpResult = ToolsListResult | ToolsCallResult
 McpError = tuple[int, str]  # (code, message)
 
@@ -27,7 +26,23 @@ def route_request(
     if method == "tools/list":
         return handle_tools_list(), None
 
-    # Actionable Error: 다음 행동을 안내
+    if method == "tools/call":
+        if params is None:
+            return None, (
+                JsonRpcErrorCode.INVALID_PARAMS,
+                "tools/call requires params with 'name' and 'arguments' fields.",
+            )
+
+        try:
+            call_params = ToolCallParams.model_validate(params)
+        except ValidationError:
+            return None, (
+                JsonRpcErrorCode.INVALID_PARAMS,
+                "Invalid tools/call params. Required: name (string), arguments (object)",
+            )
+
+        return handle_tools_call(call_params)
+
     return None, (
         JsonRpcErrorCode.METHOD_NOT_FOUND,
         f"Method '{method}' not found. Available: tools/list, tools/call",
