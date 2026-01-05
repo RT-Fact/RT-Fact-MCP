@@ -76,7 +76,7 @@ def handle_tools_call(
             "Required: text (string). Optional: whitelist, blacklist (array of domains)",
         )
 
-    # 3. Mock 결과 반환 (실제 파이프라인은 MCP-03에서 구현)
+    # TODO(MCP-03): 실제 파이프라인 구현 - 현재는 Mock 결과 반환
     mock_result = (
         f"[Mock] 팩트체크 요청 수신: '{args.text[:50]}...'"
         if len(args.text) > 50
