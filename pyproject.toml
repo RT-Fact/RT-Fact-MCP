@@ -48,6 +48,7 @@ line-length = 100
 select = ["E", "F", "I", "B"]
 # 무시할 규칙 (필요시 추가)
 ignore = []
+extend-select = ["UP"]
 
 [tool.ruff.format]
 quote-style = "double"
