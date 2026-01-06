@@ -1,15 +1,34 @@
-"""LangGraph 파이프라인 상태 정의 모듈"""
+from operator import add
+from typing import Annotated, Literal, TypedDict
 
-from typing import List, Optional, TypedDict
 
+class Source(TypedDict):
+    """검색 결과 출처"""
+    title: str
+    url: str
+    snippet: str
 
-class Sentence(TypedDict, total=False):
-    """검증 대상 문장 정보"""
+class PipelineSentence(TypedDict, total=False):
+    """
+    파이프라인 내부에서 점진적으로 채워지는 문장 구조.
+    total=False로 모든 필드가 선택적 (노드별로 점진적 추가).
+    """
+    # ===== 공통 (Extraction에서 채움) =====
+    type: Literal["claim", "opinion", "excluded"]
+    text: str
+    startIndex: int
+    endIndex: int
+    retry_count: int  # 재검색 횟수 (기본값 0)
 
-    claim: str  # 검증할 핵심 주장
-    evidence: Optional[str]  # 검색된 증거 (Optional)
-    result: Optional[str]  # 판정 결과 (True/False)
-    reasoning: Optional[str]  # 판정 이유
+    # ===== opinion/excluded용 =====
+    reason: str  # 의견/제외 분류 이유
+
+    # ===== claim용 (Search에서 채움) =====
+    sources: list[Source]
+
+    # ===== claim용 (Verification에서 채움) =====
+    verdict: Literal["TRUE", "FALSE"]
+    suggestion: str | None  # FALSE일 때 수정 제안
 
 
 class FactCheckState(TypedDict):
@@ -19,7 +38,7 @@ class FactCheckState(TypedDict):
     """
 
     original_text: str  # 검증할 원본 텍스트 본문
-    whitelist: List[str]  # (Optional) 우선 검토할 신뢰 도메인 목록
-    blacklist: List[str]  # (Optional) 검색 결과에서 제외할 도메인 목록
+    whitelist: list[str]  # (Optional) 우선 검토할 신뢰 도메인 목록
+    blacklist: list[str]  # (Optional) 검색 결과에서 제외할 도메인 목록
     title: str  # Extraction 단계에서 추출한 핵심 주제/제목
-    sentences: List[Sentence]  # 각 단계별로 정보가 누적될 문장 리스트
+    sentences: Annotated[list[PipelineSentence], add]  # 추출된 문장 리스트 (Reducer 적용)

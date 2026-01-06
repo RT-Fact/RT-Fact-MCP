@@ -1,24 +1,34 @@
-"""Extraction 단계 Mock 노드"""
-
 from graph.state import FactCheckState
 
 
-def extraction_node(state: FactCheckState) -> FactCheckState:
+async def extraction_node(state: FactCheckState) -> FactCheckState:
     """
     Extraction Node: 텍스트에서 팩트체크가 필요한 문장을 추출 (Mock)
     """
     original_text = state.get("original_text", "")
 
-    # [Mock Logic]
-    # 실제로는 LLM을 호출하여 중요 주장을 추출해야 함
+    # ... 여기서 실제 LLM 호출 (지금은 Mock) ...
+    # API 호출 대기 시간 시뮬레이션 (0초)
 
-    state["title"] = f"Topic: {original_text[:15]}..."
-    state["sentences"] = [
+    # 더미 데이터 생성
+    # PipelineSentence 구조에 맞춰 데이터 생성
+    extracted_sentences = [
         {
-            "id": 1,
-            "claim": original_text,  # 간단히 전체를 하나의 claim으로 간주
-            "status": "extracted",
+            "type": "claim",
+            "text": f"Extracted claim from: {original_text[:10]}...",
+            "startIndex": 0,
+            "endIndex": 10,
+        },
+        {
+            "type": "opinion",
+            "text": "This is an opinion statement.",
+            "startIndex": 11,
+            "endIndex": 20,
+            "reason": "Contains subjective language."
         }
     ]
 
-    return state
+    return {
+        "title": f"Topic: {original_text[:10]}...",
+        "sentences": extracted_sentences
+    }

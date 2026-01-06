@@ -1,27 +1,23 @@
-"""Verification 단계 Mock 노드"""
-
-from graph.state import FactCheckState
+from graph.state import PipelineSentence
 
 
-def verification_node(state: FactCheckState) -> FactCheckState:
+async def verification_node(sentence: PipelineSentence) -> PipelineSentence:
     """
-    Verification Node: 검색된 증거와 주장을 비교하여 검증 (Mock)
+    [Logic]
+    단일 문장(PipelineSentence)과 소스(Sources)를 바탕으로 진실 여부를 판정합니다.
     """
-    sentences = state.get("sentences", [])
-
-    updated_sentences = []
-    for sent in sentences:
-        new_sent = sent.copy()
-        evidence = new_sent.get("evidence", [])
-
-        # [Mock Logic]
-        # LLM을 호출하여 검증 수행
-        new_sent["verification_result"] = {
-            "label": "True" if evidence else "Unverified",
-            "confidence": 0.95,
-            "reasoning": "Based on the mock evidence provided.",
-        }
-        updated_sentences.append(new_sent)
-
-    state["sentences"] = updated_sentences
-    return state
+    
+    # ... 실제 검증 API 호출 ...
+    
+    # PipelineSentence 구조에 맞춰 결과 업데이트
+    # 재검색 루프 테스트를 위해 특정 조건에서 FALSE 반환하도록 Mocking 가능
+    # 여기서는 retry_count가 0이면 FALSE, 1이상이면 TRUE로 하여 루프 동작 확인
+    
+    if sentence.get("retry_count", 0) == 0:
+         sentence["verdict"] = "FALSE"
+         sentence["suggestion"] = "Need more evidence."
+    else:
+         sentence["verdict"] = "TRUE"
+         sentence["suggestion"] = None
+    
+    return sentence
