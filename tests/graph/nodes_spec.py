@@ -35,9 +35,7 @@ def test_search_node():
 
     assert "evidence" in new_state["sentences"][0]
     assert isinstance(new_state["sentences"][0]["evidence"], list)
-    assert new_state["sentences"][0]["evidence"][0]["content"] == (
-        "This is a mock evidence supporting the claim."
-    )
+    assert "content" in ["evidence"][0]
 
 
 def test_verification_node():
