@@ -22,6 +22,13 @@ class ExtractionResult(BaseModel):
     sentences: list[ExtractedSentence]
 
 
+class VerificationResult(BaseModel):
+    """검증 결과 스키마"""
+
+    verdict: Literal["TRUE", "FALSE"] = Field(description="사실 여부 판정")
+    suggestion: str | None = Field(default=None, description="FALSE 판정 시 수정 제안")
+
+
 EXTRACTION_PROMPT = """
 You are a fact-checking assistant that extracts and classifies sentences from text.
 
