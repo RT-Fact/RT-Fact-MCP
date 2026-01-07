@@ -1,7 +1,8 @@
 """Mock 노드 단위 테스트"""
 
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
 
 from graph.nodes import extraction, search, verification
 from graph.state import FactCheckState, PipelineSentence
@@ -21,20 +22,13 @@ async def test_extraction_node():
     mock_result = {
         "title": "테스트 제목",
         "sentences": [
-            {
-                "type": "claim",
-                "text": "테스트 문장입니다.",
-                "startIndex": 0,
-                "endIndex": 10
-            }
-        ]
+            {"type": "claim", "text": "테스트 문장입니다.", "startIndex": 0, "endIndex": 10}
+        ],
     }
 
     with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
         with patch.object(
-            extraction.GeminiService,
-            "extract_sentences",
-            new=AsyncMock(return_value=mock_result)
+            extraction.GeminiService, "extract_sentences", new=AsyncMock(return_value=mock_result)
         ):
             new_state = await extraction.extraction_node(initial_state)
 
@@ -50,11 +44,11 @@ async def test_search_node():
     """Search 노드가 검색을 수행하고 sources를 추가하는지 테스트"""
     # 초기 상태 (첫 진입)
     sentence: PipelineSentence = {
-        "type": "claim", 
+        "type": "claim",
         "text": "테스트 주장",
-        "startIndex": 0, 
+        "startIndex": 0,
         "endIndex": 5,
-        "retry_count": 0
+        "retry_count": 0,
     }
 
     result = await search.search_node(sentence)
@@ -69,18 +63,18 @@ async def test_search_node_retry():
     """Search 노드가 재진입 시 retry_count를 증가시키는지 테스트"""
     # 재진입 상태 (이미 sources가 있음)
     sentence: PipelineSentence = {
-        "type": "claim", 
+        "type": "claim",
         "text": "테스트 주장",
-        "startIndex": 0, 
+        "startIndex": 0,
         "endIndex": 5,
         "retry_count": 0,
-        "sources": [{"title": "Old", "url": "url", "snippet": "old"}]
+        "sources": [{"title": "Old", "url": "url", "snippet": "old"}],
     }
 
     result = await search.search_node(sentence)
 
     assert result["retry_count"] == 1  # 증가했어야 함
-    assert "sources" in result # 검색 다시 수행됨
+    assert "sources" in result  # 검색 다시 수행됨
 
 
 @pytest.mark.asyncio
@@ -92,13 +86,13 @@ async def test_verification_node():
         "startIndex": 0,
         "endIndex": 5,
         "sources": [{"title": "T", "url": "U", "snippet": "S"}],
-        "retry_count": 0
+        "retry_count": 0,
     }
 
     # retry_count가 0이면 Mock 로직상 FALSE
     result_false = await verification.verification_node(sentence)
     assert result_false["verdict"] == "FALSE"
-    
+
     # retry_count가 1이면 Mock 로직상 TRUE
     sentence["retry_count"] = 1
     result_true = await verification.verification_node(sentence)

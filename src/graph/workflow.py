@@ -16,14 +16,14 @@ def continue_to_processing(state: FactCheckState):
     단, 'type'이 'claim'인 문장만 처리 대상으로 선정합니다.
     """
     start_nodes = []
-    
+
     for s in state["sentences"]:
         if s.get("type") == "claim":
             # retry_count 초기화
             if "retry_count" not in s:
                 s["retry_count"] = 0
             start_nodes.append(Send("processing_node", s))
-            
+
     return start_nodes
 
 
@@ -33,7 +33,7 @@ def check_verification_result(sentence: PipelineSentence):
     검증 결과가 FALSE이고 재시도 횟수가 남았으면 Search로 루프(Loop)
     """
     MAX_RETRIES = 1
-    
+
     if sentence.get("verdict") == "FALSE":
         current_retries = sentence.get("retry_count", 0)
         if current_retries < MAX_RETRIES:
@@ -41,7 +41,7 @@ def check_verification_result(sentence: PipelineSentence):
             # search_node에서 수행하거나 별도 노드가 필요함.
             # 여기서는 편의상 "search_node"가 retry_count를 보고 증가시킨다고 가정.
             return "search"
-            
+
     return END
 
 
@@ -54,15 +54,12 @@ def create_processing_subgraph():
 
     workflow.add_edge(START, "search")
     workflow.add_edge("search", "verification")
-    
+
     workflow.add_conditional_edges(
-        "verification",
-        check_verification_result,
-        {"search": "search", END: END}
+        "verification", check_verification_result, {"search": "search", END: END}
     )
 
     return workflow.compile()
-
 
     return workflow.compile()
 
@@ -83,18 +80,14 @@ def create_graph():
 
     # 1. 노드 추가
     graph_builder.add_node("extraction", extraction_node)
-    
+
     # SubGraph를 감싼 래퍼 노드 추가
     graph_builder.add_node("processing_node", processing_node)
 
     # 2. 엣지 연결
     graph_builder.add_edge(START, "extraction")
-    
+
     # Extraction -> (Map) -> Processing Wrapper
-    graph_builder.add_conditional_edges(
-        "extraction",
-        continue_to_processing,
-        ["processing_node"]
-    )
-    
+    graph_builder.add_conditional_edges("extraction", continue_to_processing, ["processing_node"])
+
     return graph_builder.compile()

@@ -1,27 +1,29 @@
 """Gemini API 서비스 래퍼"""
+
+from typing import Literal
+
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
-from typing import Literal
 
 
 class ExtractedSentence(BaseModel):
     """추출된 문장 스키마 (LLM 응답용 - 인덱스 없음)"""
+
     type: Literal["claim", "opinion", "excluded"]
     text: str
-    reason: str | None = Field(
-        default=None, 
-        description="opinion 또는 excluded인 경우 분류 이유"
-    )
+    reason: str | None = Field(default=None, description="opinion 또는 excluded인 경우 분류 이유")
 
 
 class ExtractionResult(BaseModel):
     """문장 추출 결과"""
+
     title: str = Field(description="텍스트의 핵심 주제를 요약한 제목 (15자 이내)")
     sentences: list[ExtractedSentence]
 
 
-EXTRACTION_PROMPT = """You are a fact-checking assistant that extracts and classifies sentences from text.
+EXTRACTION_PROMPT = """\
+You are a fact-checking assistant that extracts and classifies sentences from text.
 
 ## Your Task
 1. Extract ALL sentences from the given text
@@ -56,7 +58,8 @@ Sentences that cannot or should not be fact-checked:
 Examples: "Hello!", "What do you think?", "It is good." (unclear referent)
 
 ## Output Requirements
-- text: MUST be the EXACT substring from the original text (preserve all characters including punctuation)
+- text: MUST be the EXACT substring from the original text
+  (preserve all characters including punctuation)
 - reason: Required for opinion and excluded types (explain WHY in Korean, 1 sentence)
 
 ## Text to Analyze
@@ -65,7 +68,7 @@ Examples: "Hello!", "What do you think?", "It is good." (unclear referent)
 
 class GeminiService:
     """Gemini API 래퍼 클래스"""
-    
+
     def __init__(self, api_key: str):
         """
         Args:
@@ -74,20 +77,20 @@ class GeminiService:
         self.client = genai.Client(api_key=api_key)
         # TODO: 모델명 관리(환경 변수 or 설정 파일)
         self.model = "gemini-2.5-flash-lite"
-    
+
     async def extract_sentences(self, text: str) -> dict:
         """
         텍스트에서 문장 추출 및 분류
-        
+
         Args:
             text: 원본 텍스트
-            
+
         Returns:
             {"title": str, "sentences": list[dict]}
             각 sentence는 type, text, startIndex, endIndex, reason?(opinion/excluded) 포함
         """
         prompt = EXTRACTION_PROMPT.format(text=text)
-        
+
         response = await self.client.aio.models.generate_content(
             model=self.model,
             contents=prompt,
@@ -97,16 +100,16 @@ class GeminiService:
                 temperature=0.1,  # 일관된 분류를 위해 낮은 temperature
             ),
         )
-        
+
         result = ExtractionResult.model_validate_json(response.text)
-        
+
         # 후처리: 원본 텍스트에서 인덱스 계산
         sentences_with_indices = []
         search_start = 0  # 순서대로 검색하여 중복 문장 처리
-        
+
         for s in result.sentences:
             sentence_dict = s.model_dump(exclude_none=True)
-            
+
             # 원본 텍스트에서 문장 위치 찾기
             idx = text.find(s.text, search_start)
             if idx != -1:
@@ -117,26 +120,19 @@ class GeminiService:
                 # 찾지 못한 경우 -1로 표시
                 sentence_dict["startIndex"] = -1
                 sentence_dict["endIndex"] = -1
-            
+
             sentences_with_indices.append(sentence_dict)
-        
-        return {
-            "title": result.title,
-            "sentences": sentences_with_indices
-        }
-    
-    async def verify_claim(
-        self, 
-        claim: str, 
-        sources: list[dict]
-    ) -> dict:
+
+        return {"title": result.title, "sentences": sentences_with_indices}
+
+    async def verify_claim(self, claim: str, sources: list[dict]) -> dict:
         """
         Claim 검증
-        
+
         Args:
             claim: 검증할 주장
             sources: 검색된 소스 리스트
-            
+
         Returns:
             검증 결과 (verdict: TRUE/FALSE, suggestion?)
         """
