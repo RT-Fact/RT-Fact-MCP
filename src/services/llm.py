@@ -22,7 +22,7 @@ class ExtractionResult(BaseModel):
     sentences: list[ExtractedSentence]
 
 
-EXTRACTION_PROMPT = """\
+EXTRACTION_PROMPT = """
 You are a fact-checking assistant that extracts and classifies sentences from text.
 
 ## Your Task
@@ -61,9 +61,11 @@ Examples: "Hello!", "What do you think?", "It is good." (unclear referent)
 - text: MUST be the EXACT substring from the original text
   (preserve all characters including punctuation)
 - reason: Required for opinion and excluded types (explain WHY in Korean, 1 sentence)
+- sentences: MUST be returned in the same order they appear in the original text
 
 ## Text to Analyze
-{text}"""
+{text}
+"""
 
 
 class GeminiService:
