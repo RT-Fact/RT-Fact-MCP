@@ -72,6 +72,7 @@ class GeminiService:
             api_key: Gemini API 키
         """
         self.client = genai.Client(api_key=api_key)
+        # TODO: 모델명 관리(환경 변수 or 설정 파일)
         self.model = "gemini-2.5-flash-lite"
     
     async def extract_sentences(self, text: str) -> dict:
