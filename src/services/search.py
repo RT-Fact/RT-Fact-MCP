@@ -1,6 +1,6 @@
 """Tavily Search API 서비스 래퍼"""
 
-from tavily import TavilyClient
+from tavily import AsyncTavilyClient
 
 from graph.state import Source
 
@@ -13,7 +13,7 @@ class TavilyService:
         Args:
             api_key: Tavily API 키
         """
-        self.client = TavilyClient(api_key=api_key)
+        self.client = AsyncTavilyClient(api_key=api_key)
 
     async def search(
         self,
@@ -36,5 +36,22 @@ class TavilyService:
         """
         include_domains = include_domains or []
         exclude_domains = exclude_domains or []
-        # TODO: Tavily API 호출
-        pass
+
+        response = await self.client.search(
+            query=query,
+            max_results=max_results,
+            include_domains=include_domains if include_domains else None,
+            exclude_domains=exclude_domains if exclude_domains else None,
+        )
+
+        sources: list[Source] = []
+        for result in response.get("results", []):
+            sources.append(
+                Source(
+                    title=result.get("title", ""),
+                    url=result.get("url", ""),
+                    snippet=result.get("content", "")[:200],
+                )
+            )
+
+        return sources
