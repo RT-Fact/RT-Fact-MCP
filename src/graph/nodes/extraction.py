@@ -1,34 +1,23 @@
+import os
 from graph.state import FactCheckState
+from services.llm import GeminiService
 
 
 async def extraction_node(state: FactCheckState) -> FactCheckState:
     """
-    Extraction Node: 텍스트에서 팩트체크가 필요한 문장을 추출 (Mock)
+    Extraction Node: 텍스트에서 팩트체크가 필요한 문장을 추출
+    GeminiService를 사용해 실제 LLM 호출
     """
     original_text = state.get("original_text", "")
-
-    # ... 여기서 실제 LLM 호출 (지금은 Mock) ...
-    # API 호출 대기 시간 시뮬레이션 (0초)
-
-    # 더미 데이터 생성
-    # PipelineSentence 구조에 맞춰 데이터 생성
-    extracted_sentences = [
-        {
-            "type": "claim",
-            "text": f"Extracted claim from: {original_text[:10]}...",
-            "startIndex": 0,
-            "endIndex": 10,
-        },
-        {
-            "type": "opinion",
-            "text": "This is an opinion statement.",
-            "startIndex": 11,
-            "endIndex": 20,
-            "reason": "Contains subjective language."
-        }
-    ]
-
+    
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY environment variable is required")
+    
+    service = GeminiService(api_key=api_key)
+    result = await service.extract_sentences(original_text)
+    
     return {
-        "title": f"Topic: {original_text[:10]}...",
-        "sentences": extracted_sentences
+        "title": result["title"],
+        "sentences": result["sentences"]
     }
