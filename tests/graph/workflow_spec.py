@@ -2,6 +2,9 @@
 
 import pytest
 
+from unittest.mock import AsyncMock, patch
+
+from graph.nodes import extraction
 from graph.state import FactCheckState
 from graph.workflow import create_graph
 
@@ -20,7 +23,33 @@ async def test_factcheck_workflow():
     }
 
     # ainvoke (Async Invoke) 사용
-    final_state = await workflow.ainvoke(initial_state)
+    
+    mock_extraction_result = {
+        "title": "Topic: AI Impact",
+        "sentences": [
+            {
+                "type": "claim",
+                "text": "AI is changing the world.",
+                "startIndex": 0,
+                "endIndex": 25,
+            },
+            {
+                "type": "opinion",
+                "text": "It is good.",
+                "startIndex": 26,
+                "endIndex": 37,
+                "reason": "Subjective judgment"
+            }
+        ]
+    }
+
+    with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
+        with patch.object(
+            extraction.GeminiService, 
+            "extract_sentences", 
+            new=AsyncMock(return_value=mock_extraction_result)
+        ):
+            final_state = await workflow.ainvoke(initial_state)
 
     # 1. Title 생성 확인
     assert final_state["title"].startswith("Topic:")
