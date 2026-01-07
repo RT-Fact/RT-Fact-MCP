@@ -16,12 +16,17 @@ def continue_to_processing(state: FactCheckState):
     단, 'type'이 'claim'인 문장만 처리 대상으로 선정합니다.
     """
     start_nodes = []
+    whitelist = state.get("whitelist", [])
+    blacklist = state.get("blacklist", [])
 
     for s in state["sentences"]:
         if s.get("type") == "claim":
             # retry_count 초기화
             if "retry_count" not in s:
                 s["retry_count"] = 0
+            # whitelist/blacklist 전달
+            s["whitelist"] = whitelist
+            s["blacklist"] = blacklist
             start_nodes.append(Send("processing_node", s))
 
     return start_nodes
