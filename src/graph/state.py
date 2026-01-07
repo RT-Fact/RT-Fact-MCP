@@ -4,15 +4,18 @@ from typing import Annotated, Literal, TypedDict
 
 class Source(TypedDict):
     """검색 결과 출처"""
+
     title: str
     url: str
     snippet: str
+
 
 class PipelineSentence(TypedDict, total=False):
     """
     파이프라인 내부에서 점진적으로 채워지는 문장 구조.
     total=False로 모든 필드가 선택적 (노드별로 점진적 추가).
     """
+
     # ===== 공통 (Extraction에서 채움) =====
     type: Literal["claim", "opinion", "excluded"]
     text: str
