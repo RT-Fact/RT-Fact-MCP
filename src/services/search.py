@@ -1,5 +1,6 @@
 """Tavily Search API 서비스 래퍼"""
 from tavily import TavilyClient
+from graph.state import Source
 
 
 class TavilyService:
@@ -15,10 +16,10 @@ class TavilyService:
     async def search(
         self,
         query: str,
-        include_domains: list[str] = [],  # whitelist
-        exclude_domains: list[str] = [],  # blacklist
+        include_domains: list[str] | None = None,  # whitelist
+        exclude_domains: list[str] | None = None,  # blacklist
         max_results: int = 5
-    ) -> list[dict]:
+    ) -> list[Source]:
         """
         웹 검색 수행
         
@@ -31,5 +32,8 @@ class TavilyService:
         Returns:
             검색 결과 리스트 (title, url, snippet)
         """
+        include_domains = include_domains or []
+        exclude_domains = exclude_domains or []
         # TODO: Tavily API 호출
         pass
+
