@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from graph.nodes import extraction
+from graph.nodes import extraction, search
 from graph.state import FactCheckState
 from graph.workflow import create_graph
 
@@ -16,8 +16,8 @@ async def test_factcheck_workflow():
 
     initial_state: FactCheckState = {
         "original_text": "AI is changing the world.",
-        "whitelist": [],
-        "blacklist": [],
+        "whitelist": ["trusted.com"],
+        "blacklist": ["spam.com"],
         "title": "",
         "sentences": [],
     }
@@ -43,13 +43,22 @@ async def test_factcheck_workflow():
         ],
     }
 
-    with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
+    mock_search_result = [
+        {"title": "AI News", "url": "https://trusted.com/ai", "snippet": "AI impact..."}
+    ]
+
+    with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key", "TAVILY_API_KEY": "test-key"}):
         with patch.object(
             extraction.GeminiService,
             "extract_sentences",
             new=AsyncMock(return_value=mock_extraction_result),
         ):
-            final_state = await workflow.ainvoke(initial_state)
+            with patch.object(
+                search.TavilyService,
+                "search",
+                new=AsyncMock(return_value=mock_search_result),
+            ):
+                final_state = await workflow.ainvoke(initial_state)
 
     # 1. Title 생성 확인
     assert final_state["title"].startswith("Topic:")
