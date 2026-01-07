@@ -32,6 +32,16 @@ async def test():
         start = s["startIndex"]
         end = s["endIndex"]
         
+        # -1 인덱스 처리: LLM이 원본에서 문장을 찾지 못한 경우
+        if start == -1:
+            print(f"[{type_str}] {text_str}")
+            print(f"  ⚠️ Sentence not found in original text (index: -1)")
+            if "reason" in s:
+                print(f"  reason: {s['reason']}")
+            print()
+            all_valid = False
+            continue
+        
         # 인덱스 검증: original_text[start:end]가 text와 일치하는지
         extracted = original_text[start:end]
         is_valid = extracted == text_str
