@@ -1,6 +1,7 @@
 """Mock 노드 단위 테스트"""
 
 import pytest
+from unittest.mock import AsyncMock, patch
 
 from graph.nodes import extraction, search, verification
 from graph.state import FactCheckState, PipelineSentence
@@ -17,7 +18,25 @@ async def test_extraction_node():
         "blacklist": [],
     }
 
-    new_state = await extraction.extraction_node(initial_state)
+    mock_result = {
+        "title": "테스트 제목",
+        "sentences": [
+            {
+                "type": "claim",
+                "text": "테스트 문장입니다.",
+                "startIndex": 0,
+                "endIndex": 10
+            }
+        ]
+    }
+
+    with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
+        with patch.object(
+            extraction.GeminiService,
+            "extract_sentences",
+            new=AsyncMock(return_value=mock_result)
+        ):
+            new_state = await extraction.extraction_node(initial_state)
 
     assert len(new_state["sentences"]) > 0
     first_sent = new_state["sentences"][0]
