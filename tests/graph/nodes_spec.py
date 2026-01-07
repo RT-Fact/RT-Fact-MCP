@@ -86,6 +86,35 @@ async def test_search_node_retry():
 
 
 @pytest.mark.asyncio
+async def test_search_node_with_domain_filters():
+    """Search 노드가 whitelist/blacklist를 TavilyService에 전달하는지 테스트"""
+    sentence: PipelineSentence = {
+        "type": "claim",
+        "text": "테스트 주장",
+        "startIndex": 0,
+        "endIndex": 5,
+        "retry_count": 0,
+        "whitelist": ["trusted.com", "reliable.org"],
+        "blacklist": ["spam.com"],
+    }
+
+    mock_sources = [{"title": "Test", "url": "https://trusted.com", "snippet": "결과"}]
+    mock_search = AsyncMock(return_value=mock_sources)
+
+    with patch.dict("os.environ", {"TAVILY_API_KEY": "test-key"}):
+        with patch.object(search.TavilyService, "search", mock_search):
+            await search.search_node(sentence)
+
+    # TavilyService.search()에 도메인 필터가 전달되었는지 확인
+    mock_search.assert_called_once_with(
+        query="테스트 주장",
+        include_domains=["trusted.com", "reliable.org"],
+        exclude_domains=["spam.com"],
+        max_results=5,
+    )
+
+
+@pytest.mark.asyncio
 async def test_verification_node():
     """Verification 노드가 verdict를 설정하는지 테스트"""
     sentence: PipelineSentence = {
