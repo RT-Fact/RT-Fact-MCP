@@ -51,7 +51,11 @@ async def test_search_node():
         "retry_count": 0,
     }
 
-    result = await search.search_node(sentence)
+    mock_sources = [{"title": "Test", "url": "https://test.com", "snippet": "테스트 결과"}]
+
+    with patch.dict("os.environ", {"TAVILY_API_KEY": "test-key"}):
+        with patch.object(search.TavilyService, "search", new=AsyncMock(return_value=mock_sources)):
+            result = await search.search_node(sentence)
 
     assert "sources" in result
     assert len(result["sources"]) > 0
@@ -71,7 +75,11 @@ async def test_search_node_retry():
         "sources": [{"title": "Old", "url": "url", "snippet": "old"}],
     }
 
-    result = await search.search_node(sentence)
+    mock_sources = [{"title": "New", "url": "https://new.com", "snippet": "새 결과"}]
+
+    with patch.dict("os.environ", {"TAVILY_API_KEY": "test-key"}):
+        with patch.object(search.TavilyService, "search", new=AsyncMock(return_value=mock_sources)):
+            result = await search.search_node(sentence)
 
     assert result["retry_count"] == 1  # 증가했어야 함
     assert "sources" in result  # 검색 다시 수행됨
