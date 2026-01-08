@@ -52,6 +52,56 @@ async def test_gemini_service_verify_claim(mocker):
 
 
 @pytest.mark.asyncio
+async def test_verify_claim_true_verdict(mocker):
+    """TRUE 판정 시 suggestion이 None인지 테스트"""
+    mock_llm_result = llm.VerificationResult(verdict="TRUE", suggestion=None)
+
+    mock_api_response = MagicMock()
+    mock_api_response.text = mock_llm_result.model_dump_json()
+
+    mock_client = MagicMock()
+    mock_client.aio.models.generate_content = AsyncMock(return_value=mock_api_response)
+    mocker.patch.object(llm.genai, "Client", return_value=mock_client)
+
+    service = llm.GeminiService(api_key="test-key")
+    result = await service.verify_claim(
+        claim="서울은 대한민국의 수도이다.",
+        sources=[
+            {"title": "Wikipedia", "url": "https://...", "snippet": "서울은 대한민국의 수도..."}
+        ],
+    )
+
+    assert result["verdict"] == "TRUE"
+    assert "suggestion" not in result  # exclude_none=True이므로 None은 제외됨
+
+
+@pytest.mark.asyncio
+async def test_verify_claim_false_verdict_with_suggestion(mocker):
+    """FALSE 판정 시 suggestion이 포함되는지 테스트"""
+    mock_llm_result = llm.VerificationResult(
+        verdict="FALSE", suggestion="비트코인은 2008년이 아닌 2009년에 출시되었습니다."
+    )
+
+    mock_api_response = MagicMock()
+    mock_api_response.text = mock_llm_result.model_dump_json()
+
+    mock_client = MagicMock()
+    mock_client.aio.models.generate_content = AsyncMock(return_value=mock_api_response)
+    mocker.patch.object(llm.genai, "Client", return_value=mock_client)
+
+    service = llm.GeminiService(api_key="test-key")
+    result = await service.verify_claim(
+        claim="비트코인은 2008년에 출시되었다.",
+        sources=[
+            {"title": "Bitcoin Wiki", "url": "https://...", "snippet": "2009년 1월에 출시..."}
+        ],
+    )
+
+    assert result["verdict"] == "FALSE"
+    assert result["suggestion"] == "비트코인은 2008년이 아닌 2009년에 출시되었습니다."
+
+
+@pytest.mark.asyncio
 async def test_extract_sentences_index_calculation(mocker):
     """인덱스 계산 로직 테스트 - 원본 텍스트에서 문장 위치 정확도"""
     # 원본 텍스트
