@@ -4,6 +4,9 @@ from tavily import AsyncTavilyClient
 
 from graph.state import Source
 
+# Snippet 최대 길이 (검색 결과 미리보기용)
+SNIPPET_MAX_LENGTH = 200
+
 
 class TavilyService:
     """Tavily Search API 래퍼 클래스"""
@@ -50,7 +53,7 @@ class TavilyService:
                 Source(
                     title=result.get("title", ""),
                     url=result.get("url", ""),
-                    snippet=result.get("content", "")[:200],
+                    snippet=result.get("content", "")[:SNIPPET_MAX_LENGTH],
                 )
             )
 
