@@ -1,7 +1,5 @@
-import os
-
 from graph.state import PipelineSentence
-from services.search import TavilyService
+from services.providers import get_tavily_service
 
 
 async def search_node(sentence: PipelineSentence) -> PipelineSentence:
@@ -16,12 +14,8 @@ async def search_node(sentence: PipelineSentence) -> PipelineSentence:
         if "sources" in sentence and sentence["sources"]:
             sentence["retry_count"] += 1
 
-    # 2. TavilyService를 통한 검색 수행
-    api_key = os.getenv("TAVILY_API_KEY")
-    if not api_key:
-        raise ValueError("TAVILY_API_KEY environment variable is required")
-
-    service = TavilyService(api_key=api_key)
+    # 2. TavilyService를 통한 검색 수행 (싱글톤 인스턴스 사용)
+    service = get_tavily_service()
     sources = await service.search(
         query=sentence["text"],
         include_domains=sentence.get("whitelist", []),

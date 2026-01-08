@@ -1,11 +1,13 @@
 """Mock 노드 단위 테스트"""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from graph.nodes import extraction, search, verification
 from graph.state import FactCheckState, PipelineSentence
+from services.llm import GeminiService
+from services.search import TavilyService
 
 
 @pytest.mark.asyncio
@@ -26,10 +28,11 @@ async def test_extraction_node():
         ],
     }
 
+    mock_service = MagicMock(spec=GeminiService)
+    mock_service.extract_sentences = AsyncMock(return_value=mock_result)
+
     with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
-        with patch.object(
-            extraction.GeminiService, "extract_sentences", new=AsyncMock(return_value=mock_result)
-        ):
+        with patch("graph.nodes.extraction.get_gemini_service", return_value=mock_service):
             new_state = await extraction.extraction_node(initial_state)
 
     assert len(new_state["sentences"]) > 0
@@ -53,8 +56,11 @@ async def test_search_node():
 
     mock_sources = [{"title": "Test", "url": "https://test.com", "snippet": "테스트 결과"}]
 
+    mock_service = MagicMock(spec=TavilyService)
+    mock_service.search = AsyncMock(return_value=mock_sources)
+
     with patch.dict("os.environ", {"TAVILY_API_KEY": "test-key"}):
-        with patch.object(search.TavilyService, "search", new=AsyncMock(return_value=mock_sources)):
+        with patch("graph.nodes.search.get_tavily_service", return_value=mock_service):
             result = await search.search_node(sentence)
 
     assert "sources" in result
@@ -77,8 +83,11 @@ async def test_search_node_retry():
 
     mock_sources = [{"title": "New", "url": "https://new.com", "snippet": "새 결과"}]
 
+    mock_service = MagicMock(spec=TavilyService)
+    mock_service.search = AsyncMock(return_value=mock_sources)
+
     with patch.dict("os.environ", {"TAVILY_API_KEY": "test-key"}):
-        with patch.object(search.TavilyService, "search", new=AsyncMock(return_value=mock_sources)):
+        with patch("graph.nodes.search.get_tavily_service", return_value=mock_service):
             result = await search.search_node(sentence)
 
     assert result["retry_count"] == 1  # 증가했어야 함
@@ -101,8 +110,11 @@ async def test_search_node_with_domain_filters():
     mock_sources = [{"title": "Test", "url": "https://trusted.com", "snippet": "결과"}]
     mock_search = AsyncMock(return_value=mock_sources)
 
+    mock_service = MagicMock(spec=TavilyService)
+    mock_service.search = mock_search
+
     with patch.dict("os.environ", {"TAVILY_API_KEY": "test-key"}):
-        with patch.object(search.TavilyService, "search", mock_search):
+        with patch("graph.nodes.search.get_tavily_service", return_value=mock_service):
             await search.search_node(sentence)
 
     # TavilyService.search()에 도메인 필터가 전달되었는지 확인
@@ -128,10 +140,11 @@ async def test_verification_node_true():
 
     mock_result = {"verdict": "TRUE"}
 
+    mock_service = MagicMock(spec=GeminiService)
+    mock_service.verify_claim = AsyncMock(return_value=mock_result)
+
     with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
-        with patch.object(
-            verification.GeminiService, "verify_claim", new=AsyncMock(return_value=mock_result)
-        ):
+        with patch("graph.nodes.verification.get_gemini_service", return_value=mock_service):
             result = await verification.verification_node(sentence)
 
     assert result["verdict"] == "TRUE"
@@ -152,10 +165,11 @@ async def test_verification_node_false_with_suggestion():
 
     mock_result = {"verdict": "FALSE", "suggestion": "비트코인은 2009년에 출시되었습니다."}
 
+    mock_service = MagicMock(spec=GeminiService)
+    mock_service.verify_claim = AsyncMock(return_value=mock_result)
+
     with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
-        with patch.object(
-            verification.GeminiService, "verify_claim", new=AsyncMock(return_value=mock_result)
-        ):
+        with patch("graph.nodes.verification.get_gemini_service", return_value=mock_service):
             result = await verification.verification_node(sentence)
 
     assert result["verdict"] == "FALSE"

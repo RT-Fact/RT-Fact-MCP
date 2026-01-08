@@ -1,12 +1,13 @@
 """LangGraph 워크플로우 통합 테스트 (Mock)"""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from graph.nodes import extraction, search, verification
 from graph.state import FactCheckState
 from graph.workflow import create_graph
+from services.llm import GeminiService
+from services.search import TavilyService
 
 
 @pytest.mark.asyncio
@@ -50,29 +51,25 @@ async def test_factcheck_workflow():
     # verify_claim mock - 첫 호출은 FALSE, 이후는 TRUE (retry loop 테스트)
     verify_call_count = 0
 
-    async def mock_verify_claim(self, claim, sources):
+    async def mock_verify_claim(claim, sources):
         nonlocal verify_call_count
         verify_call_count += 1
         if verify_call_count == 1:
             return {"verdict": "FALSE", "suggestion": "Need more evidence."}
         return {"verdict": "TRUE"}
 
+    # Mock services
+    mock_gemini = MagicMock(spec=GeminiService)
+    mock_gemini.extract_sentences = AsyncMock(return_value=mock_extraction_result)
+    mock_gemini.verify_claim = mock_verify_claim
+
+    mock_tavily = MagicMock(spec=TavilyService)
+    mock_tavily.search = AsyncMock(return_value=mock_search_result)
+
     with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key", "TAVILY_API_KEY": "test-key"}):
-        with patch.object(
-            extraction.GeminiService,
-            "extract_sentences",
-            new=AsyncMock(return_value=mock_extraction_result),
-        ):
-            with patch.object(
-                search.TavilyService,
-                "search",
-                new=AsyncMock(return_value=mock_search_result),
-            ):
-                with patch.object(
-                    verification.GeminiService,
-                    "verify_claim",
-                    new=mock_verify_claim,
-                ):
+        with patch("graph.nodes.extraction.get_gemini_service", return_value=mock_gemini):
+            with patch("graph.nodes.verification.get_gemini_service", return_value=mock_gemini):
+                with patch("graph.nodes.search.get_tavily_service", return_value=mock_tavily):
                     final_state = await workflow.ainvoke(initial_state)
 
     # 1. Title 생성 확인
