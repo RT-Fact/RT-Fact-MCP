@@ -23,6 +23,10 @@ class PipelineSentence(TypedDict, total=False):
     endIndex: int
     retry_count: int  # 재검색 횟수 (기본값 0)
 
+    # ===== 검색 필터 (workflow에서 전달) =====
+    whitelist: list[str]  # 우선 검색 도메인
+    blacklist: list[str]  # 제외할 도메인
+
     # ===== opinion/excluded용 =====
     reason: str  # 의견/제외 분류 이유
 

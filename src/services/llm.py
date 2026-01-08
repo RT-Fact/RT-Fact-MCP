@@ -6,6 +6,8 @@ from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 
+from services.prompts import EXTRACTION_PROMPT, VERIFICATION_PROMPT
+
 
 class ExtractedSentence(BaseModel):
     """추출된 문장 스키마 (LLM 응답용 - 인덱스 없음)"""
@@ -22,50 +24,11 @@ class ExtractionResult(BaseModel):
     sentences: list[ExtractedSentence]
 
 
-EXTRACTION_PROMPT = """
-You are a fact-checking assistant that extracts and classifies sentences from text.
+class VerificationResult(BaseModel):
+    """검증 결과 스키마"""
 
-## Your Task
-1. Extract ALL sentences from the given text
-2. Classify each sentence into one of three categories
-3. Generate a concise title (max 15 characters) that summarizes the main topic
-
-## Classification Criteria
-
-### claim (Fact-checkable)
-Sentences containing objective, verifiable information:
-- Statistics, numbers, dates, measurements
-- Named entities (people, organizations, places)
-- Historical events or scientific facts
-- Statements that can be verified with external sources
-Examples: "The capital of Korea is Seoul.", "Bitcoin was launched in 2009."
-
-### opinion (Subjective)
-Sentences expressing personal views, judgments, or preferences:
-- Words like "should", "must", "need to" (normative statements)
-- Evaluative adjectives: "best", "worst", "beautiful", "terrible"
-- Predictions without factual basis
-- Personal feelings or beliefs
-Examples: "Seoul is a beautiful city.", "This policy will fail."
-
-### excluded (Not fact-checkable)
-Sentences that cannot or should not be fact-checked:
-- Greetings, farewells
-- Questions
-- Sentences with only pronouns (no clear referent)
-- Incomplete sentences or fragments
-- Commands or requests
-Examples: "Hello!", "What do you think?", "It is good." (unclear referent)
-
-## Output Requirements
-- text: MUST be the EXACT substring from the original text
-  (preserve all characters including punctuation)
-- reason: Required for opinion and excluded types (explain WHY in Korean, 1 sentence)
-- sentences: MUST be returned in the same order they appear in the original text
-
-## Text to Analyze
-{text}
-"""
+    verdict: Literal["TRUE", "FALSE"] = Field(description="사실 여부 판정")
+    suggestion: str | None = Field(default=None, description="FALSE 판정 시 수정 제안")
 
 
 class GeminiService:
@@ -133,10 +96,31 @@ class GeminiService:
 
         Args:
             claim: 검증할 주장
-            sources: 검색된 소스 리스트
+            sources: 검색된 소스 리스트 [{"title": str, "url": str, "snippet": str}, ...]
 
         Returns:
-            검증 결과 (verdict: TRUE/FALSE, suggestion?)
+            {"verdict": "TRUE" | "FALSE", "suggestion": str | None}
         """
-        # TODO: Gemini API 호출
-        pass
+
+        # sources를 문자열로 포맷팅
+        sources_text = "\n\n".join(
+            f"### {s.get('title', 'Untitled')}\n"
+            f"URL: {s.get('url', 'N/A')}\n"
+            f"Content: {s.get('snippet', '')}"
+            for s in sources
+        )
+
+        prompt = VERIFICATION_PROMPT.format(claim=claim, sources=sources_text)
+
+        response = await self.client.aio.models.generate_content(
+            model=self.model,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=VerificationResult,
+                temperature=0.1,
+            ),
+        )
+
+        result = VerificationResult.model_validate_json(response.text)
+        return result.model_dump(exclude_none=True)

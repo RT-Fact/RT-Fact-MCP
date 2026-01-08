@@ -1,29 +1,27 @@
 """LangGraph 워크플로우 통합 테스트 (Mock)"""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
-from graph.nodes import extraction
 from graph.state import FactCheckState
 from graph.workflow import create_graph
 
 
 @pytest.mark.asyncio
-async def test_factcheck_workflow():
+async def test_factcheck_workflow(mock_gemini_service, mock_tavily_service):
     """전체 워크플로우(Graph) 실행 테스트 (Async)"""
     workflow = create_graph()
 
     initial_state: FactCheckState = {
         "original_text": "AI is changing the world.",
-        "whitelist": [],
-        "blacklist": [],
+        "whitelist": ["trusted.com"],
+        "blacklist": ["spam.com"],
         "title": "",
         "sentences": [],
     }
 
-    # ainvoke (Async Invoke) 사용
-
+    # Mock extraction result
     mock_extraction_result = {
         "title": "Topic: AI Impact",
         "sentences": [
@@ -43,13 +41,26 @@ async def test_factcheck_workflow():
         ],
     }
 
-    with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
-        with patch.object(
-            extraction.GeminiService,
-            "extract_sentences",
-            new=AsyncMock(return_value=mock_extraction_result),
-        ):
-            final_state = await workflow.ainvoke(initial_state)
+    mock_search_result = [
+        {"title": "AI News", "url": "https://trusted.com/ai", "snippet": "AI impact..."}
+    ]
+
+    # verify_claim mock - 첫 호출은 FALSE, 이후는 TRUE (retry loop 테스트)
+    verify_call_count = 0
+
+    async def mock_verify_claim(claim, sources):
+        nonlocal verify_call_count
+        verify_call_count += 1
+        if verify_call_count == 1:
+            return {"verdict": "FALSE", "suggestion": "Need more evidence."}
+        return {"verdict": "TRUE"}
+
+    # Configure mock services
+    mock_gemini_service.extract_sentences = AsyncMock(return_value=mock_extraction_result)
+    mock_gemini_service.verify_claim = mock_verify_claim
+    mock_tavily_service.search = AsyncMock(return_value=mock_search_result)
+
+    final_state = await workflow.ainvoke(initial_state)
 
     # 1. Title 생성 확인
     assert final_state["title"].startswith("Topic:")
@@ -59,7 +70,6 @@ async def test_factcheck_workflow():
     assert len(sentences) > 0
 
     # 3. 문장 처리 결과 확인 (SubGraph & Loop)
-    sentences = final_state["sentences"]
     # Reducer(add) 특성상 처리 전 문장과 처리 후 문장이 공존할 수 있음.
     # 따라서 "verdict" 키가 존재하는(=처리 완료된) Claim만 필터링해야 함.
     processed_claims = [s for s in sentences if s.get("type") == "claim" and "verdict" in s]
