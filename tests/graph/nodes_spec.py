@@ -115,8 +115,8 @@ async def test_search_node_with_domain_filters():
 
 
 @pytest.mark.asyncio
-async def test_verification_node():
-    """Verification 노드가 verdict를 설정하는지 테스트"""
+async def test_verification_node_true():
+    """Verification 노드가 TRUE verdict를 설정하는지 테스트"""
     sentence: PipelineSentence = {
         "type": "claim",
         "text": "테스트 주장",
@@ -126,11 +126,37 @@ async def test_verification_node():
         "retry_count": 0,
     }
 
-    # retry_count가 0이면 Mock 로직상 FALSE
-    result_false = await verification.verification_node(sentence)
-    assert result_false["verdict"] == "FALSE"
+    mock_result = {"verdict": "TRUE"}
 
-    # retry_count가 1이면 Mock 로직상 TRUE
-    sentence["retry_count"] = 1
-    result_true = await verification.verification_node(sentence)
-    assert result_true["verdict"] == "TRUE"
+    with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
+        with patch.object(
+            verification.GeminiService, "verify_claim", new=AsyncMock(return_value=mock_result)
+        ):
+            result = await verification.verification_node(sentence)
+
+    assert result["verdict"] == "TRUE"
+    assert result["suggestion"] is None
+
+
+@pytest.mark.asyncio
+async def test_verification_node_false_with_suggestion():
+    """Verification 노드가 FALSE verdict와 suggestion을 설정하는지 테스트"""
+    sentence: PipelineSentence = {
+        "type": "claim",
+        "text": "비트코인은 2008년에 출시되었다.",
+        "startIndex": 0,
+        "endIndex": 20,
+        "sources": [{"title": "Bitcoin Wiki", "url": "https://...", "snippet": "2009년 출시..."}],
+        "retry_count": 0,
+    }
+
+    mock_result = {"verdict": "FALSE", "suggestion": "비트코인은 2009년에 출시되었습니다."}
+
+    with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
+        with patch.object(
+            verification.GeminiService, "verify_claim", new=AsyncMock(return_value=mock_result)
+        ):
+            result = await verification.verification_node(sentence)
+
+    assert result["verdict"] == "FALSE"
+    assert result["suggestion"] == "비트코인은 2009년에 출시되었습니다."

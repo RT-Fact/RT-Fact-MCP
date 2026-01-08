@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from graph.nodes import extraction, search
+from graph.nodes import extraction, search, verification
 from graph.state import FactCheckState
 from graph.workflow import create_graph
 
@@ -47,6 +47,16 @@ async def test_factcheck_workflow():
         {"title": "AI News", "url": "https://trusted.com/ai", "snippet": "AI impact..."}
     ]
 
+    # verify_claim mock - 첫 호출은 FALSE, 이후는 TRUE (retry loop 테스트)
+    verify_call_count = 0
+
+    async def mock_verify_claim(self, claim, sources):
+        nonlocal verify_call_count
+        verify_call_count += 1
+        if verify_call_count == 1:
+            return {"verdict": "FALSE", "suggestion": "Need more evidence."}
+        return {"verdict": "TRUE"}
+
     with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key", "TAVILY_API_KEY": "test-key"}):
         with patch.object(
             extraction.GeminiService,
@@ -58,7 +68,12 @@ async def test_factcheck_workflow():
                 "search",
                 new=AsyncMock(return_value=mock_search_result),
             ):
-                final_state = await workflow.ainvoke(initial_state)
+                with patch.object(
+                    verification.GeminiService,
+                    "verify_claim",
+                    new=mock_verify_claim,
+                ):
+                    final_state = await workflow.ainvoke(initial_state)
 
     # 1. Title 생성 확인
     assert final_state["title"].startswith("Topic:")
