@@ -1,17 +1,15 @@
 """Mock 노드 단위 테스트"""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
 from graph.nodes import extraction, search, verification
 from graph.state import FactCheckState, PipelineSentence
-from services.llm import GeminiService
-from services.search import TavilyService
 
 
 @pytest.mark.asyncio
-async def test_extraction_node():
+async def test_extraction_node(mock_gemini_service):
     """Extraction 노드가 PipelineSentence를 잘 생성하는지 테스트"""
     initial_state: FactCheckState = {
         "original_text": "테스트 텍스트",
@@ -28,12 +26,9 @@ async def test_extraction_node():
         ],
     }
 
-    mock_service = MagicMock(spec=GeminiService)
-    mock_service.extract_sentences = AsyncMock(return_value=mock_result)
+    mock_gemini_service.extract_sentences = AsyncMock(return_value=mock_result)
 
-    with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
-        with patch("graph.nodes.extraction.get_gemini_service", return_value=mock_service):
-            new_state = await extraction.extraction_node(initial_state)
+    new_state = await extraction.extraction_node(initial_state)
 
     assert len(new_state["sentences"]) > 0
     first_sent = new_state["sentences"][0]
@@ -43,9 +38,8 @@ async def test_extraction_node():
 
 
 @pytest.mark.asyncio
-async def test_search_node():
+async def test_search_node(mock_tavily_service):
     """Search 노드가 검색을 수행하고 sources를 추가하는지 테스트"""
-    # 초기 상태 (첫 진입)
     sentence: PipelineSentence = {
         "type": "claim",
         "text": "테스트 주장",
@@ -55,13 +49,9 @@ async def test_search_node():
     }
 
     mock_sources = [{"title": "Test", "url": "https://test.com", "snippet": "테스트 결과"}]
+    mock_tavily_service.search = AsyncMock(return_value=mock_sources)
 
-    mock_service = MagicMock(spec=TavilyService)
-    mock_service.search = AsyncMock(return_value=mock_sources)
-
-    with patch.dict("os.environ", {"TAVILY_API_KEY": "test-key"}):
-        with patch("graph.nodes.search.get_tavily_service", return_value=mock_service):
-            result = await search.search_node(sentence)
+    result = await search.search_node(sentence)
 
     assert "sources" in result
     assert len(result["sources"]) > 0
@@ -69,9 +59,8 @@ async def test_search_node():
 
 
 @pytest.mark.asyncio
-async def test_search_node_retry():
+async def test_search_node_retry(mock_tavily_service):
     """Search 노드가 재진입 시 retry_count를 증가시키는지 테스트"""
-    # 재진입 상태 (이미 sources가 있음)
     sentence: PipelineSentence = {
         "type": "claim",
         "text": "테스트 주장",
@@ -82,20 +71,16 @@ async def test_search_node_retry():
     }
 
     mock_sources = [{"title": "New", "url": "https://new.com", "snippet": "새 결과"}]
+    mock_tavily_service.search = AsyncMock(return_value=mock_sources)
 
-    mock_service = MagicMock(spec=TavilyService)
-    mock_service.search = AsyncMock(return_value=mock_sources)
-
-    with patch.dict("os.environ", {"TAVILY_API_KEY": "test-key"}):
-        with patch("graph.nodes.search.get_tavily_service", return_value=mock_service):
-            result = await search.search_node(sentence)
+    result = await search.search_node(sentence)
 
     assert result["retry_count"] == 1  # 증가했어야 함
     assert "sources" in result  # 검색 다시 수행됨
 
 
 @pytest.mark.asyncio
-async def test_search_node_with_domain_filters():
+async def test_search_node_with_domain_filters(mock_tavily_service):
     """Search 노드가 whitelist/blacklist를 TavilyService에 전달하는지 테스트"""
     sentence: PipelineSentence = {
         "type": "claim",
@@ -109,13 +94,9 @@ async def test_search_node_with_domain_filters():
 
     mock_sources = [{"title": "Test", "url": "https://trusted.com", "snippet": "결과"}]
     mock_search = AsyncMock(return_value=mock_sources)
+    mock_tavily_service.search = mock_search
 
-    mock_service = MagicMock(spec=TavilyService)
-    mock_service.search = mock_search
-
-    with patch.dict("os.environ", {"TAVILY_API_KEY": "test-key"}):
-        with patch("graph.nodes.search.get_tavily_service", return_value=mock_service):
-            await search.search_node(sentence)
+    await search.search_node(sentence)
 
     # TavilyService.search()에 도메인 필터가 전달되었는지 확인
     mock_search.assert_called_once_with(
@@ -127,7 +108,7 @@ async def test_search_node_with_domain_filters():
 
 
 @pytest.mark.asyncio
-async def test_verification_node_true():
+async def test_verification_node_true(mock_gemini_service):
     """Verification 노드가 TRUE verdict를 설정하는지 테스트"""
     sentence: PipelineSentence = {
         "type": "claim",
@@ -139,20 +120,16 @@ async def test_verification_node_true():
     }
 
     mock_result = {"verdict": "TRUE"}
+    mock_gemini_service.verify_claim = AsyncMock(return_value=mock_result)
 
-    mock_service = MagicMock(spec=GeminiService)
-    mock_service.verify_claim = AsyncMock(return_value=mock_result)
-
-    with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
-        with patch("graph.nodes.verification.get_gemini_service", return_value=mock_service):
-            result = await verification.verification_node(sentence)
+    result = await verification.verification_node(sentence)
 
     assert result["verdict"] == "TRUE"
     assert result["suggestion"] is None
 
 
 @pytest.mark.asyncio
-async def test_verification_node_false_with_suggestion():
+async def test_verification_node_false_with_suggestion(mock_gemini_service):
     """Verification 노드가 FALSE verdict와 suggestion을 설정하는지 테스트"""
     sentence: PipelineSentence = {
         "type": "claim",
@@ -164,13 +141,9 @@ async def test_verification_node_false_with_suggestion():
     }
 
     mock_result = {"verdict": "FALSE", "suggestion": "비트코인은 2009년에 출시되었습니다."}
+    mock_gemini_service.verify_claim = AsyncMock(return_value=mock_result)
 
-    mock_service = MagicMock(spec=GeminiService)
-    mock_service.verify_claim = AsyncMock(return_value=mock_result)
-
-    with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
-        with patch("graph.nodes.verification.get_gemini_service", return_value=mock_service):
-            result = await verification.verification_node(sentence)
+    result = await verification.verification_node(sentence)
 
     assert result["verdict"] == "FALSE"
     assert result["suggestion"] == "비트코인은 2009년에 출시되었습니다."

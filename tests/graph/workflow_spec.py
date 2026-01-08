@@ -1,17 +1,15 @@
 """LangGraph 워크플로우 통합 테스트 (Mock)"""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
 from graph.state import FactCheckState
 from graph.workflow import create_graph
-from services.llm import GeminiService
-from services.search import TavilyService
 
 
 @pytest.mark.asyncio
-async def test_factcheck_workflow():
+async def test_factcheck_workflow(mock_gemini_service, mock_tavily_service):
     """전체 워크플로우(Graph) 실행 테스트 (Async)"""
     workflow = create_graph()
 
@@ -23,8 +21,7 @@ async def test_factcheck_workflow():
         "sentences": [],
     }
 
-    # ainvoke (Async Invoke) 사용
-
+    # Mock extraction result
     mock_extraction_result = {
         "title": "Topic: AI Impact",
         "sentences": [
@@ -58,19 +55,12 @@ async def test_factcheck_workflow():
             return {"verdict": "FALSE", "suggestion": "Need more evidence."}
         return {"verdict": "TRUE"}
 
-    # Mock services
-    mock_gemini = MagicMock(spec=GeminiService)
-    mock_gemini.extract_sentences = AsyncMock(return_value=mock_extraction_result)
-    mock_gemini.verify_claim = mock_verify_claim
+    # Configure mock services
+    mock_gemini_service.extract_sentences = AsyncMock(return_value=mock_extraction_result)
+    mock_gemini_service.verify_claim = mock_verify_claim
+    mock_tavily_service.search = AsyncMock(return_value=mock_search_result)
 
-    mock_tavily = MagicMock(spec=TavilyService)
-    mock_tavily.search = AsyncMock(return_value=mock_search_result)
-
-    with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key", "TAVILY_API_KEY": "test-key"}):
-        with patch("graph.nodes.extraction.get_gemini_service", return_value=mock_gemini):
-            with patch("graph.nodes.verification.get_gemini_service", return_value=mock_gemini):
-                with patch("graph.nodes.search.get_tavily_service", return_value=mock_tavily):
-                    final_state = await workflow.ainvoke(initial_state)
+    final_state = await workflow.ainvoke(initial_state)
 
     # 1. Title 생성 확인
     assert final_state["title"].startswith("Topic:")
@@ -80,7 +70,6 @@ async def test_factcheck_workflow():
     assert len(sentences) > 0
 
     # 3. 문장 처리 결과 확인 (SubGraph & Loop)
-    sentences = final_state["sentences"]
     # Reducer(add) 특성상 처리 전 문장과 처리 후 문장이 공존할 수 있음.
     # 따라서 "verdict" 키가 존재하는(=처리 완료된) Claim만 필터링해야 함.
     processed_claims = [s for s in sentences if s.get("type") == "claim" and "verdict" in s]
