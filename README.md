@@ -65,5 +65,5 @@ PYTHONPATH=src poetry run python scripts/test_extraction_e2e.py
 ## 개발 서버 실행
 
 ```bash
-poetry run uvicorn src.main:app --reload
+PYTHONPATH=src poetry run uvicorn main:app --reload
 ```
