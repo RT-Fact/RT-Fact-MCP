@@ -10,7 +10,7 @@ McpResult = ToolsListResult | ToolsCallResult
 McpError = tuple[int, str]  # (code, message)
 
 
-def route_request(
+async def route_request(
     method: str,
     params: dict[str, JsonValue] | None,
 ) -> tuple[McpResult | None, McpError | None]:
@@ -41,7 +41,7 @@ def route_request(
                 "Invalid tools/call params. Required: name (string), arguments (object)",
             )
 
-        return handle_tools_call(call_params)
+        return await handle_tools_call(call_params)
 
     return None, (
         JsonRpcErrorCode.METHOD_NOT_FOUND,
