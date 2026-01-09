@@ -46,8 +46,8 @@ async def test():
     for s in result["sentences"]:
         type_str = s["type"]
         text_str = s["text"]
-        start = s["startIndex"]
-        end = s["endIndex"]
+        start = s["start_index"]
+        end = s["end_index"]
 
         # -1 인덱스 처리: LLM이 원본에서 문장을 찾지 못한 경우
         if start == -1:

@@ -28,14 +28,14 @@ async def test_factcheck_workflow(mock_gemini_service, mock_tavily_service):
             {
                 "type": "claim",
                 "text": "AI is changing the world.",
-                "startIndex": 0,
-                "endIndex": 25,
+                "start_index": 0,
+                "end_index": 25,
             },
             {
                 "type": "opinion",
                 "text": "It is good.",
-                "startIndex": 26,
-                "endIndex": 37,
+                "start_index": 26,
+                "end_index": 37,
                 "reason": "Subjective judgment",
             },
         ],

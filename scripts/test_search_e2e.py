@@ -18,8 +18,8 @@ async def test():
         {
             "type": "claim",
             "text": "비트코인은 2009년 사토시 나카모토에 의해 만들어졌습니다.",
-            "startIndex": 0,
-            "endIndex": 30,
+            "start_index": 0,
+            "end_index": 30,
             "retry_count": 0,
             "whitelist": [],
             "blacklist": [],
@@ -27,8 +27,8 @@ async def test():
         {
             "type": "claim",
             "text": "삼성전자는 1969년에 설립되었습니다.",
-            "startIndex": 31,
-            "endIndex": 50,
+            "start_index": 31,
+            "end_index": 50,
             "retry_count": 0,
             "whitelist": ["samsung.com"],  # whitelist 테스트
             "blacklist": ["wikipedia.org"],  # blacklist 테스트
@@ -36,8 +36,8 @@ async def test():
         {
             "type": "claim",
             "text": "한국의 GDP는 세계 13위입니다.",
-            "startIndex": 51,
-            "endIndex": 70,
+            "start_index": 51,
+            "end_index": 70,
             "retry_count": 0,
             "whitelist": [],
             "blacklist": [],

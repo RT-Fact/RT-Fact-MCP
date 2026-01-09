@@ -1,7 +1,9 @@
 """MCP 프로토콜 핸들러 (SRP: 도구 정의 및 핸들링만 담당)"""
 
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 
+from graph.state import FactCheckState
+from graph.workflow import create_graph
 from mcp.errors import JsonRpcErrorCode
 from mcp.schemas.mcp import (
     ContentItem,
@@ -11,8 +13,14 @@ from mcp.schemas.mcp import (
     ToolsListResult,
 )
 from mcp.schemas.tools.factcheck import FactcheckArguments
+from mcp.transformers import result_to_json_content, transform_pipeline_result
 
 McpError = tuple[int, str]  # (code, message)
+
+# LangGraph 시스템 경계 타입 검증용
+FactCheckStateAdapter = TypeAdapter(FactCheckState)
+
+_graph = create_graph()
 
 FACTCHECK_TOOL = ToolDefinition(
     name="factcheck",
@@ -51,7 +59,7 @@ def handle_tools_list() -> ToolsListResult:
     return ToolsListResult(tools=[FACTCHECK_TOOL])
 
 
-def handle_tools_call(
+async def handle_tools_call(
     params: ToolCallParams,
 ) -> tuple[ToolsCallResult | None, McpError | None]:
     """tools/call 요청 처리 - 도구 실행 및 결과 반환
@@ -76,11 +84,25 @@ def handle_tools_call(
             "Required: text (string). Optional: whitelist, blacklist (array of domains)",
         )
 
-    # TODO(MCP-03): 실제 파이프라인 구현 - 현재는 Mock 결과 반환
-    mock_result = (
-        f"[Mock] 팩트체크 요청 수신: '{args.text[:50]}...'"
-        if len(args.text) > 50
-        else f"[Mock] 팩트체크 요청 수신: '{args.text}'"
-    )
+    try:
+        initial_state: FactCheckState = {
+            "original_text": args.text,
+            "whitelist": args.whitelist,
+            "blacklist": args.blacklist,
+            "title": "",
+            "sentences": [],
+        }
 
-    return ToolsCallResult(content=[ContentItem(type="text", text=mock_result)]), None
+        raw_state = await _graph.ainvoke(initial_state)
+        final_state = FactCheckStateAdapter.validate_python(raw_state)
+
+        mcp_response = transform_pipeline_result(final_state)
+        json_content = result_to_json_content(mcp_response)
+
+        return ToolsCallResult(content=[ContentItem(type="text", text=json_content)]), None
+
+    except Exception as e:
+        return None, (
+            JsonRpcErrorCode.INTERNAL_ERROR,
+            f"Factcheck pipeline failed: {e!s}",
+        )

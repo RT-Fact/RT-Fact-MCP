@@ -19,8 +19,8 @@ class PipelineSentence(TypedDict, total=False):
     # ===== 공통 (Extraction에서 채움) =====
     type: Literal["claim", "opinion", "excluded"]
     text: str
-    startIndex: int
-    endIndex: int
+    start_index: int
+    end_index: int
     retry_count: int  # 재검색 횟수 (기본값 0)
 
     # ===== 검색 필터 (workflow에서 전달) =====

@@ -52,7 +52,7 @@ class GeminiService:
 
         Returns:
             {"title": str, "sentences": list[dict]}
-            각 sentence는 type, text, startIndex, endIndex, reason?(opinion/excluded) 포함
+            각 sentence는 type, text, start_index, end_index, reason?(opinion/excluded) 포함
         """
         prompt = EXTRACTION_PROMPT.format(text=text)
 
@@ -78,13 +78,13 @@ class GeminiService:
             # 원본 텍스트에서 문장 위치 찾기
             idx = text.find(s.text, search_start)
             if idx != -1:
-                sentence_dict["startIndex"] = idx
-                sentence_dict["endIndex"] = idx + len(s.text)
+                sentence_dict["start_index"] = idx
+                sentence_dict["end_index"] = idx + len(s.text)
                 search_start = idx + len(s.text)  # 다음 검색 시작점
             else:
                 # 찾지 못한 경우 -1로 표시
-                sentence_dict["startIndex"] = -1
-                sentence_dict["endIndex"] = -1
+                sentence_dict["start_index"] = -1
+                sentence_dict["end_index"] = -1
 
             sentences_with_indices.append(sentence_dict)
 

@@ -17,18 +17,31 @@ from mcp.schemas.mcp import (
     ToolsCallResult,
     ToolsListResult,
 )
-from mcp.schemas.tools import FactcheckArguments
+from mcp.schemas.tools import (
+    ClaimSentence,
+    FactcheckArguments,
+    FactcheckResult,
+    OpinionSentence,
+    ResultSentence,
+)
 
 __all__ = [
+    # JSON-RPC
     "JsonRpcRequest",
     "JsonRpcError",
     "JsonRpcSuccessResponse",
     "JsonRpcErrorResponse",
     "JsonRpcResponse",
+    # MCP Protocol
     "ToolDefinition",
     "ToolsListResult",
     "ToolCallParams",
     "ContentItem",
     "ToolsCallResult",
+    # Factcheck Tool
     "FactcheckArguments",
+    "FactcheckResult",
+    "ClaimSentence",
+    "OpinionSentence",
+    "ResultSentence",
 ]

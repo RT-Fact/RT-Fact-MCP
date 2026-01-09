@@ -84,7 +84,7 @@ async def mcp_endpoint(request: Request) -> JSONResponse:
         )
         return JSONResponse(content=error_response.model_dump())
 
-    result, error = route_request(rpc_request.method, rpc_request.params)
+    result, error = await route_request(rpc_request.method, rpc_request.params)
 
     if error:
         code, message = error

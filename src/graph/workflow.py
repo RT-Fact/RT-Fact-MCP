@@ -66,8 +66,6 @@ def create_processing_subgraph():
 
     return workflow.compile()
 
-    return workflow.compile()
-
 
 async def processing_node(sentence: PipelineSentence):
     """
