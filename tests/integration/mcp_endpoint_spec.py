@@ -40,7 +40,7 @@ async def test_tools_call_success_returns_factcheck_result(
         return_value={
             "title": "테스트 제목",
             "sentences": [
-                {"type": "claim", "text": "테스트 문장", "startIndex": 0, "endIndex": 6}
+                {"type": "claim", "text": "테스트 문장", "start_index": 0, "end_index": 6}
             ],
         }
     )

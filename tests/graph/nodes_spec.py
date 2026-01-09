@@ -22,7 +22,7 @@ async def test_extraction_node(mock_gemini_service):
     mock_result = {
         "title": "테스트 제목",
         "sentences": [
-            {"type": "claim", "text": "테스트 문장입니다.", "startIndex": 0, "endIndex": 10}
+            {"type": "claim", "text": "테스트 문장입니다.", "start_index": 0, "end_index": 10}
         ],
     }
 
@@ -34,7 +34,7 @@ async def test_extraction_node(mock_gemini_service):
     first_sent = new_state["sentences"][0]
     assert "type" in first_sent
     assert "text" in first_sent
-    assert "startIndex" in first_sent
+    assert "start_index" in first_sent
 
 
 @pytest.mark.asyncio
@@ -43,8 +43,8 @@ async def test_search_node(mock_tavily_service):
     sentence: PipelineSentence = {
         "type": "claim",
         "text": "테스트 주장",
-        "startIndex": 0,
-        "endIndex": 5,
+        "start_index": 0,
+        "end_index": 5,
         "retry_count": 0,
     }
 
@@ -64,8 +64,8 @@ async def test_search_node_retry(mock_tavily_service):
     sentence: PipelineSentence = {
         "type": "claim",
         "text": "테스트 주장",
-        "startIndex": 0,
-        "endIndex": 5,
+        "start_index": 0,
+        "end_index": 5,
         "retry_count": 0,
         "sources": [{"title": "Old", "url": "url", "snippet": "old"}],
     }
@@ -85,8 +85,8 @@ async def test_search_node_with_domain_filters(mock_tavily_service):
     sentence: PipelineSentence = {
         "type": "claim",
         "text": "테스트 주장",
-        "startIndex": 0,
-        "endIndex": 5,
+        "start_index": 0,
+        "end_index": 5,
         "retry_count": 0,
         "whitelist": ["trusted.com", "reliable.org"],
         "blacklist": ["spam.com"],
@@ -113,8 +113,8 @@ async def test_verification_node_true(mock_gemini_service):
     sentence: PipelineSentence = {
         "type": "claim",
         "text": "테스트 주장",
-        "startIndex": 0,
-        "endIndex": 5,
+        "start_index": 0,
+        "end_index": 5,
         "sources": [{"title": "T", "url": "U", "snippet": "S"}],
         "retry_count": 0,
     }
@@ -134,8 +134,8 @@ async def test_verification_node_false_with_suggestion(mock_gemini_service):
     sentence: PipelineSentence = {
         "type": "claim",
         "text": "비트코인은 2008년에 출시되었다.",
-        "startIndex": 0,
-        "endIndex": 20,
+        "start_index": 0,
+        "end_index": 20,
         "sources": [{"title": "Bitcoin Wiki", "url": "https://...", "snippet": "2009년 출시..."}],
         "retry_count": 0,
     }

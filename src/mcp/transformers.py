@@ -23,8 +23,8 @@ def transform_claim(sentence: PipelineSentence) -> ClaimSentence:
     return {
         "type": "claim",
         "text": sentence.get("text", ""),
-        "startIndex": sentence.get("startIndex", -1),
-        "endIndex": sentence.get("endIndex", -1),
+        "startIndex": sentence.get("start_index", -1),
+        "endIndex": sentence.get("end_index", -1),
         "verdict": sentence.get("verdict", "FALSE"),
         "sources": sentence.get("sources", []),
         "suggestion": sentence.get("suggestion"),
@@ -36,8 +36,8 @@ def transform_opinion(sentence: PipelineSentence) -> OpinionSentence:
     return {
         "type": "opinion",
         "text": sentence.get("text", ""),
-        "startIndex": sentence.get("startIndex", -1),
-        "endIndex": sentence.get("endIndex", -1),
+        "startIndex": sentence.get("start_index", -1),
+        "endIndex": sentence.get("end_index", -1),
         "reason": sentence.get("reason", ""),
     }
 

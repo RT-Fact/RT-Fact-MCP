@@ -14,7 +14,7 @@ async def test_gemini_service_extract_sentences(mocker):
     mock_response = {
         "title": "테스트 제목",
         "sentences": [
-            {"type": "claim", "text": "테스트 문장입니다.", "startIndex": 0, "endIndex": 10}
+            {"type": "claim", "text": "테스트 문장입니다.", "start_index": 0, "end_index": 10}
         ],
     }
 
@@ -130,10 +130,10 @@ async def test_extract_sentences_index_calculation(mocker):
     result = await service.extract_sentences(original_text)
 
     # 검증 - 인덱스가 정확히 계산되었는지
-    assert result["sentences"][0]["startIndex"] == 0
-    assert result["sentences"][0]["endIndex"] == 11  # "첫 번째 문장입니다." 길이
-    assert result["sentences"][1]["startIndex"] == 12  # 공백 포함
-    assert result["sentences"][1]["endIndex"] == 23  # "두 번째 문장입니다." 끝
+    assert result["sentences"][0]["start_index"] == 0
+    assert result["sentences"][0]["end_index"] == 11  # "첫 번째 문장입니다." 길이
+    assert result["sentences"][1]["start_index"] == 12  # 공백 포함
+    assert result["sentences"][1]["end_index"] == 23  # "두 번째 문장입니다." 끝
 
 
 @pytest.mark.asyncio
@@ -163,10 +163,10 @@ async def test_extract_sentences_duplicate_handling(mocker):
     result = await service.extract_sentences(original_text)
 
     # 검증 - 첫 번째 "안녕하세요"와 두 번째 "안녕하세요"의 인덱스가 다름
-    assert result["sentences"][0]["startIndex"] == 0  # 첫 번째 "안녕하세요."
-    assert result["sentences"][0]["endIndex"] == 6
-    assert result["sentences"][2]["startIndex"] == 14  # 두 번째 "안녕하세요."
-    assert result["sentences"][2]["endIndex"] == 20
+    assert result["sentences"][0]["start_index"] == 0  # 첫 번째 "안녕하세요."
+    assert result["sentences"][0]["end_index"] == 6
+    assert result["sentences"][2]["start_index"] == 14  # 두 번째 "안녕하세요."
+    assert result["sentences"][2]["end_index"] == 20
 
 
 @pytest.mark.asyncio
@@ -194,8 +194,8 @@ async def test_extract_sentences_not_found_in_text(mocker):
     result = await service.extract_sentences(original_text)
 
     # 검증 - 찾지 못한 경우 -1
-    assert result["sentences"][0]["startIndex"] == -1
-    assert result["sentences"][0]["endIndex"] == -1
+    assert result["sentences"][0]["start_index"] == -1
+    assert result["sentences"][0]["end_index"] == -1
 
 
 @pytest.mark.asyncio

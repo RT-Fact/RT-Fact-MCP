@@ -18,8 +18,8 @@ async def test():
         {
             "type": "claim",
             "text": "비트코인은 2009년에 출시되었다.",
-            "startIndex": 0,
-            "endIndex": 20,
+            "start_index": 0,
+            "end_index": 20,
             "retry_count": 0,
             "sources": [
                 {
@@ -37,8 +37,8 @@ async def test():
         {
             "type": "claim",
             "text": "비트코인은 2008년에 출시되었다.",  # FALSE expected
-            "startIndex": 21,
-            "endIndex": 40,
+            "start_index": 21,
+            "end_index": 40,
             "retry_count": 0,
             "sources": [
                 {
@@ -51,8 +51,8 @@ async def test():
         {
             "type": "claim",
             "text": "삼성전자는 1969년에 설립되었습니다.",
-            "startIndex": 41,
-            "endIndex": 60,
+            "start_index": 41,
+            "end_index": 60,
             "retry_count": 0,
             "sources": [
                 {
