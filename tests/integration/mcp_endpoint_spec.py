@@ -33,8 +33,6 @@ async def test_tools_call_success_returns_factcheck_result(
     mock_gemini_service, mock_tavily_service
 ):
     """tools/call 성공 시 파이프라인 실행 후 팩트체크 결과 반환"""
-    from unittest.mock import AsyncMock
-
     # Mock 설정: Gemini extraction
     mock_gemini_service.extract_sentences = AsyncMock(
         return_value={
@@ -77,8 +75,6 @@ async def test_tools_call_success_returns_factcheck_result(
     assert data["result"]["content"][0]["type"] == "text"
 
     # 파이프라인 응답 구조 검증
-    import json
-
     content_text = data["result"]["content"][0]["text"]
     result = json.loads(content_text)
 
@@ -94,8 +90,6 @@ async def test_tools_call_pipeline_failure_returns_internal_error(
     mock_gemini_service, mock_tavily_service
 ):
     """tools/call 파이프라인 실패 시 Internal Error 반환"""
-    from unittest.mock import AsyncMock
-
     # Mock 설정: Gemini extraction 실패
     mock_gemini_service.extract_sentences = AsyncMock(
         side_effect=Exception("Gemini API timeout")

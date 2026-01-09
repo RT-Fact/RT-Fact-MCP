@@ -63,7 +63,14 @@ async def test():
 
     verified_claim_count = 0
 
-    for i, sentence in enumerate(sentences):
+    # 최종 결과만 필터링: opinion + verdict가 있는 claim
+    final_sentences = [
+        s for s in sentences
+        if s.get("type") == "opinion"
+        or (s.get("type") == "claim" and s.get("verdict") is not None)
+    ]
+
+    for i, sentence in enumerate(final_sentences):
         print(f"\n--- 문장 {i + 1} ---")
 
         sentence_type = sentence.get("type")
@@ -76,9 +83,6 @@ async def test():
 
         if sentence_type == "claim":
             verdict = sentence.get("verdict")
-            if verdict is None:
-                print("(extraction 단계 claim - 검증 스킵)")
-                continue
 
             assert verdict in ["TRUE", "FALSE"], \
                 f"잘못된 verdict: {verdict}"

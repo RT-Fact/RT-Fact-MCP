@@ -20,6 +20,8 @@ McpError = tuple[int, str]  # (code, message)
 # LangGraph 시스템 경계 타입 검증용
 FactCheckStateAdapter = TypeAdapter(FactCheckState)
 
+_graph = create_graph()
+
 FACTCHECK_TOOL = ToolDefinition(
     name="factcheck",
     description=(
@@ -83,8 +85,6 @@ async def handle_tools_call(
         )
 
     try:
-        graph = create_graph()
-
         initial_state: FactCheckState = {
             "original_text": args.text,
             "whitelist": args.whitelist,
@@ -93,7 +93,7 @@ async def handle_tools_call(
             "sentences": [],
         }
 
-        raw_state = await graph.ainvoke(initial_state)
+        raw_state = await _graph.ainvoke(initial_state)
         final_state = FactCheckStateAdapter.validate_python(raw_state)
 
         mcp_response = transform_pipeline_result(final_state)
