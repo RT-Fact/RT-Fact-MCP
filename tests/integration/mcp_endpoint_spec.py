@@ -53,9 +53,7 @@ async def test_tools_call_success_returns_factcheck_result(
         return_value={"verdict": "TRUE", "suggestion": None}
     )
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             "/mcp",
             json={
@@ -91,13 +89,9 @@ async def test_tools_call_pipeline_failure_returns_internal_error(
 ):
     """tools/call 파이프라인 실패 시 Internal Error 반환"""
     # Mock 설정: Gemini extraction 실패
-    mock_gemini_service.extract_sentences = AsyncMock(
-        side_effect=Exception("Gemini API timeout")
-    )
+    mock_gemini_service.extract_sentences = AsyncMock(side_effect=Exception("Gemini API timeout"))
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             "/mcp",
             json={
@@ -118,9 +112,7 @@ async def test_tools_call_pipeline_failure_returns_internal_error(
 @pytest.mark.asyncio
 async def test_tools_call_invalid_arguments_returns_error():
     """tools/call 필수 인자 누락 시 Invalid Params 반환"""
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             "/mcp",
             json={
@@ -144,9 +136,7 @@ async def test_tools_call_invalid_arguments_returns_error():
 @pytest.mark.asyncio
 async def test_tools_call_unknown_tool_returns_error():
     """tools/call 알 수 없는 도구 요청 시 Invalid Params 반환"""
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             "/mcp",
             json={
