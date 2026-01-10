@@ -1,12 +1,15 @@
+import traceback
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from json import JSONDecodeError
+from typing import Any
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
+from common.logger import configure_logger, get_logger
 from config import get_settings
 from mcp import (
     JsonRpcError,
@@ -19,6 +22,9 @@ from mcp.router import route_request
 
 _ = load_dotenv()
 
+configure_logger()
+log = get_logger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
@@ -28,6 +34,42 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
 
 app = FastAPI(title="RT-Fact MCP Server", lifespan=lifespan)
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """전역 예외 처리: 모든 Unhandled Exception을 규격화된 JSON-RPC 에러로 반환"""
+
+    request_id = None
+    try:
+        body = await request.json()
+        if isinstance(body, dict):
+            request_id = body.get("id")
+    except Exception:
+        pass
+
+    log.exception("Unhandled exception occurred", json_rpc_id=request_id)
+
+    error_data: dict[str, Any] = {
+        "detail": str(exc),
+        "type": type(exc).__name__,
+    }
+
+    settings = get_settings()
+    if settings.environment == "dev":
+        error_data["traceback"] = "".join(
+            traceback.format_exception(type(exc), exc, exc.__traceback__)
+        )
+
+    error_response = JsonRpcErrorResponse(
+        id=request_id,
+        error=JsonRpcError(
+            code=JsonRpcErrorCode.INTERNAL_ERROR,
+            message="Internal error",
+            data=error_data,
+        ),
+    )
+    return JSONResponse(content=error_response.model_dump())
 
 
 @app.get("/")
