@@ -3,8 +3,14 @@
 from typing import Literal
 
 from google import genai
-from google.genai import types
+from google.genai import errors, types
 from pydantic import BaseModel, Field
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from services.prompts import EXTRACTION_PROMPT, VERIFICATION_PROMPT
 
@@ -43,6 +49,24 @@ class GeminiService:
         # TODO: 모델명 관리(환경 변수 or 설정 파일)
         self.model = "gemini-2.5-flash-lite"
 
+    @retry(
+        retry=retry_if_exception_type((errors.ServerError, errors.ClientError)),
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+    )
+    async def _generate_content(self, contents: str, response_schema: type[BaseModel]):
+        """재시도 로직이 적용된 내부 generate_content 메서드"""
+        config = types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=response_schema,
+            temperature=0.1,
+        )
+        return await self.client.aio.models.generate_content(
+            model=self.model,
+            contents=contents,
+            config=config,
+        )
+
     async def extract_sentences(self, text: str) -> dict:
         """
         텍스트에서 문장 추출 및 분류
@@ -56,15 +80,7 @@ class GeminiService:
         """
         prompt = EXTRACTION_PROMPT.format(text=text)
 
-        response = await self.client.aio.models.generate_content(
-            model=self.model,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=ExtractionResult,
-                temperature=0.1,  # 일관된 분류를 위해 낮은 temperature
-            ),
-        )
+        response = await self._generate_content(prompt, ExtractionResult)
 
         result = ExtractionResult.model_validate_json(response.text)
 
@@ -112,15 +128,7 @@ class GeminiService:
 
         prompt = VERIFICATION_PROMPT.format(claim=claim, sources=sources_text)
 
-        response = await self.client.aio.models.generate_content(
-            model=self.model,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=VerificationResult,
-                temperature=0.1,
-            ),
-        )
+        response = await self._generate_content(prompt, VerificationResult)
 
         result = VerificationResult.model_validate_json(response.text)
         return result.model_dump(exclude_none=True)
