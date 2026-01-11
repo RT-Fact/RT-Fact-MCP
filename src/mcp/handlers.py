@@ -2,6 +2,7 @@
 
 from pydantic import TypeAdapter, ValidationError
 
+from common.logger import get_logger
 from graph.state import FactCheckState
 from graph.workflow import create_graph
 from mcp.errors import JsonRpcErrorCode
@@ -16,14 +17,17 @@ from mcp.schemas.tools.factcheck import FactcheckArguments
 from mcp.transformers import result_to_json_content, transform_pipeline_result
 
 McpError = tuple[int, str]  # (code, message)
+FACTCHECK_TOOL_NAME = "factcheck"
 
 # LangGraph 시스템 경계 타입 검증용
 FactCheckStateAdapter = TypeAdapter(FactCheckState)
 
+log = get_logger(__name__)
+
 _graph = create_graph()
 
 FACTCHECK_TOOL = ToolDefinition(
-    name="factcheck",
+    name=FACTCHECK_TOOL_NAME,
     description=(
         "텍스트의 사실 여부를 검증합니다. "
         "뉴스 기사, 주장, 통계 등 사실 확인이 필요한 텍스트에 사용하세요. "
@@ -56,6 +60,7 @@ FACTCHECK_TOOL = ToolDefinition(
 
 def handle_tools_list() -> ToolsListResult:
     """tools/list 요청 처리 - 사용 가능한 도구 목록 반환"""
+    log.info("tools/list called")
     return ToolsListResult(tools=[FACTCHECK_TOOL])
 
 
@@ -68,19 +73,23 @@ async def handle_tools_call(
         (result, None): 성공
         (None, (code, message)): 실패 (Actionable Error)
     """
-    if params.name != "factcheck":
+    if params.name != FACTCHECK_TOOL_NAME:
+        log.warning("Unknown tool requested", tool_name=params.name)
         return None, (
             JsonRpcErrorCode.INVALID_PARAMS,
-            f"Unknown tool '{params.name}'. Available: factcheck",
+            f"Unknown tool '{params.name}'. Available: {FACTCHECK_TOOL_NAME}",
         )
+
+    log.info("Tool execution started", tool_name=params.name)
 
     try:
         args = FactcheckArguments.model_validate(params.arguments)
     except ValidationError as e:
+        log.warning("Tool arguments validation failed", error=str(e), arguments=params.arguments)
         errors = "; ".join(f"{err['loc'][0]}: {err['msg']}" for err in e.errors())
         return None, (
             JsonRpcErrorCode.INVALID_PARAMS,
-            f"Invalid arguments for 'factcheck': {errors}. "
+            f"Invalid arguments for '{FACTCHECK_TOOL_NAME}': {errors}. "
             "Required: text (string). Optional: whitelist, blacklist (array of domains)",
         )
 
@@ -99,9 +108,11 @@ async def handle_tools_call(
         mcp_response = transform_pipeline_result(final_state)
         json_content = result_to_json_content(mcp_response)
 
+        log.info("Tool execution completed", tool_name=params.name)
         return ToolsCallResult(content=[ContentItem(type="text", text=json_content)]), None
 
     except Exception as e:
+        log.exception("Tool execution failed", tool_name=params.name, error=str(e))
         return None, (
             JsonRpcErrorCode.INTERNAL_ERROR,
             f"Factcheck pipeline failed: {e!s}",

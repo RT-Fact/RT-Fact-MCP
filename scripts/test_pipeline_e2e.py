@@ -31,13 +31,15 @@ async def test():
     # 2. 파이프라인 실행
     print("파이프라인 실행 중...")
     graph = create_graph()
-    result = await graph.ainvoke({
-        "original_text": test_text,
-        "whitelist": [],
-        "blacklist": [],
-        "title": "",
-        "sentences": [],
-    })
+    result = await graph.ainvoke(
+        {
+            "original_text": test_text,
+            "whitelist": [],
+            "blacklist": [],
+            "title": "",
+            "sentences": [],
+        }
+    )
 
     # 3. 구조 검증 (assertion) - LangGraph State는 snake_case
     assert "title" in result, "title 필드 누락"
@@ -65,9 +67,9 @@ async def test():
 
     # 최종 결과만 필터링: opinion + verdict가 있는 claim
     final_sentences = [
-        s for s in sentences
-        if s.get("type") == "opinion"
-        or (s.get("type") == "claim" and s.get("verdict") is not None)
+        s
+        for s in sentences
+        if s.get("type") == "opinion" or (s.get("type") == "claim" and s.get("verdict") is not None)
     ]
 
     for i, sentence in enumerate(final_sentences):
@@ -76,16 +78,14 @@ async def test():
         sentence_type = sentence.get("type")
         sentence_text = sentence.get("text")
 
-        assert sentence_type in ["claim", "opinion", "excluded"], \
-            f"잘못된 타입: {sentence_type}"
+        assert sentence_type in ["claim", "opinion", "excluded"], f"잘못된 타입: {sentence_type}"
         print(f"타입: {sentence_type}")
         print(f"텍스트: {sentence_text}")
 
         if sentence_type == "claim":
             verdict = sentence.get("verdict")
 
-            assert verdict in ["TRUE", "FALSE"], \
-                f"잘못된 verdict: {verdict}"
+            assert verdict in ["TRUE", "FALSE"], f"잘못된 verdict: {verdict}"
             assert "sources" in sentence, "sources 필드 누락"
 
             sources = sentence.get("sources", [])
@@ -103,8 +103,9 @@ async def test():
             assert reason is not None, "reason 필드 누락"
             print(f"이유: {reason}")
 
-    assert verified_claim_count >= 1, \
+    assert verified_claim_count >= 1, (
         f"검증된 claim이 없음 (verified_claim_count={verified_claim_count})"
+    )
 
     print(f"\n✓ 검증된 claim 수: {verified_claim_count}")
     print("\n✅ E2E 테스트 통과!")

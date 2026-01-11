@@ -1,3 +1,4 @@
+import traceback
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from json import JSONDecodeError
@@ -5,8 +6,9 @@ from json import JSONDecodeError
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
+from common.logger import configure_logger, get_logger
 from config import get_settings
 from mcp import (
     JsonRpcError,
@@ -17,7 +19,19 @@ from mcp import (
 )
 from mcp.router import route_request
 
+
+class ErrorData(BaseModel):
+    """전역 예외 처리 응답에 포함되는 에러 데이터"""
+
+    detail: str
+    type: str
+    traceback: str | None = None
+
+
 _ = load_dotenv()
+
+configure_logger()
+log = get_logger(__name__)
 
 
 @asynccontextmanager
@@ -28,6 +42,48 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
 
 app = FastAPI(title="RT-Fact MCP Server", lifespan=lifespan)
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """전역 예외 처리: 모든 Unhandled Exception을 규격화된 JSON-RPC 에러로 반환"""
+
+    request_id = None
+    try:
+        body = await request.json()
+        if isinstance(body, dict):
+            request_id = body.get("id")
+    except Exception as e:
+        log.debug("Failed to parse request body for error context", error=str(e))
+
+    log.error("Unhandled exception occurred", json_rpc_id=request_id, exc_info=exc)
+
+    try:
+        is_dev = get_settings().environment == "dev"
+    except Exception:
+        is_dev = False
+
+    if is_dev:
+        error_data = ErrorData(
+            detail=str(exc),
+            type=type(exc).__name__,
+            traceback="".join(traceback.format_exception(type(exc), exc, exc.__traceback__)),
+        )
+    else:
+        error_data = ErrorData(
+            detail="An internal error occurred",
+            type=type(exc).__name__,
+        )
+
+    error_response = JsonRpcErrorResponse(
+        id=request_id,
+        error=JsonRpcError(
+            code=JsonRpcErrorCode.INTERNAL_ERROR,
+            message="Internal error",
+            data=error_data.model_dump(exclude_none=True),
+        ),
+    )
+    return JSONResponse(content=error_response.model_dump())
 
 
 @app.get("/")
