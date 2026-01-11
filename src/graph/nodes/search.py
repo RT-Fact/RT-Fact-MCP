@@ -10,22 +10,22 @@ async def search_node(sentence: PipelineSentence) -> PipelineSentence:
 
     service = get_tavily_service()
 
-    # 1. 1차 검색 (Whitelist)
-    sources = await service.search(
-        query=sentence["text"],
-        include_domains=sentence.get("whitelist", []),
-        exclude_domains=sentence.get("blacklist", []),
-        max_results=3,
-    )
+    search_strategies = [
+        sentence.get("whitelist", []),
+        None,
+    ]
 
-    if not sources:
-        # 2. 2차 검색 (Fallback: Graylist) - 결과가 0건일 때
+    sources = []
+    for domains in search_strategies:
         sources = await service.search(
             query=sentence["text"],
-            include_domains=None,  # Whitelist 해제
+            include_domains=domains,
             exclude_domains=sentence.get("blacklist", []),
             max_results=3,
         )
+
+        if sources:
+            break
 
     sentence["sources"] = sources
 

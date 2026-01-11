@@ -12,7 +12,11 @@ from tenacity import (
     wait_exponential,
 )
 
+from common.logger import get_logger
+from common.text_utils import find_fuzzy_indices
 from services.prompts import EXTRACTION_PROMPT, VERIFICATION_PROMPT
+
+log = get_logger(__name__)
 
 
 class ExtractedSentence(BaseModel):
@@ -91,14 +95,16 @@ class GeminiService:
         for s in result.sentences:
             sentence_dict = s.model_dump(exclude_none=True)
 
-            # 원본 텍스트에서 문장 위치 찾기
-            idx = text.find(s.text, search_start)
-            if idx != -1:
-                sentence_dict["start_index"] = idx
-                sentence_dict["end_index"] = idx + len(s.text)
-                search_start = idx + len(s.text)  # 다음 검색 시작점
+            # 원본 텍스트에서 문장 위치 찾기 (Fuzzy Matching)
+            start_idx, end_idx = find_fuzzy_indices(text, s.text, search_start)
+
+            if start_idx != -1:
+                sentence_dict["start_index"] = start_idx
+                sentence_dict["end_index"] = end_idx
+                search_start = end_idx
             else:
-                # 찾지 못한 경우 -1로 표시
+                # 찾지 못함 - 강제 Fallback 처리
+                log.warning("Fuzzy match failed", text=s.text, search_start=search_start)
                 sentence_dict["start_index"] = -1
                 sentence_dict["end_index"] = -1
 
