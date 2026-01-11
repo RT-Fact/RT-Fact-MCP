@@ -1,9 +1,8 @@
 import logging
 import sys
-from typing import Any
 
 import structlog
-from structlog.types import EventDict, Processor
+from structlog.types import EventDict, Processor, WrappedLogger
 
 
 def configure_logger() -> None:
@@ -47,7 +46,11 @@ def configure_logger() -> None:
     root_logger.setLevel(logging.INFO)
 
 
-def _drop_color_message_key(_: Any, __: Any, event_dict: EventDict) -> EventDict:
+def _drop_color_message_key(
+    _logger: WrappedLogger,
+    _method_name: str,
+    event_dict: EventDict,
+) -> EventDict:
     """Uvicorn 등에서 넘어오는 color_message 키 제거 (JSON 로그 오염 방지)"""
     event_dict.pop("color_message", None)
     return event_dict

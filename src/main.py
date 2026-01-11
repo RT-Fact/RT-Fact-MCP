@@ -2,12 +2,11 @@ import traceback
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from json import JSONDecodeError
-from typing import Any
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from common.logger import configure_logger, get_logger
 from config import get_settings
@@ -19,6 +18,15 @@ from mcp import (
     JsonRpcSuccessResponse,
 )
 from mcp.router import route_request
+
+
+class ErrorData(BaseModel):
+    """전역 예외 처리 응답에 포함되는 에러 데이터"""
+
+    detail: str
+    type: str
+    traceback: str | None = None
+
 
 _ = load_dotenv()
 
@@ -50,15 +58,17 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 
     log.exception("Unhandled exception occurred", json_rpc_id=request_id)
 
-    error_data: dict[str, Any] = {
-        "detail": str(exc),
-        "type": type(exc).__name__,
-    }
+    error_data = ErrorData(
+        detail=str(exc),
+        type=type(exc).__name__,
+    )
 
     settings = get_settings()
     if settings.environment == "dev":
-        error_data["traceback"] = "".join(
-            traceback.format_exception(type(exc), exc, exc.__traceback__)
+        error_data = ErrorData(
+            detail=str(exc),
+            type=type(exc).__name__,
+            traceback="".join(traceback.format_exception(type(exc), exc, exc.__traceback__)),
         )
 
     error_response = JsonRpcErrorResponse(
@@ -66,7 +76,7 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
         error=JsonRpcError(
             code=JsonRpcErrorCode.INTERNAL_ERROR,
             message="Internal error",
-            data=error_data,
+            data=error_data.model_dump(exclude_none=True),
         ),
     )
     return JSONResponse(content=error_response.model_dump())
