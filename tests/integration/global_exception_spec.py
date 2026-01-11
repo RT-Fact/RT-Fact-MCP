@@ -89,4 +89,4 @@ async def test_handler_no_traceback_in_prod(monkeypatch: pytest.MonkeyPatch) -> 
 
         # 검증: traceback이 없어야 함
         assert "traceback" not in body["error"]["data"]
-        assert body["error"]["data"]["detail"] == "Critical Secret Error"
+        assert body["error"]["data"]["detail"] == "An internal error occurred"

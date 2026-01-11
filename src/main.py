@@ -53,22 +53,26 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
         body = await request.json()
         if isinstance(body, dict):
             request_id = body.get("id")
+    except Exception as e:
+        log.debug("Failed to parse request body for error context", error=str(e))
+
+    log.error("Unhandled exception occurred", json_rpc_id=request_id, exc_info=exc)
+
+    try:
+        is_dev = get_settings().environment == "dev"
     except Exception:
-        pass
+        is_dev = False
 
-    log.exception("Unhandled exception occurred", json_rpc_id=request_id)
-
-    error_data = ErrorData(
-        detail=str(exc),
-        type=type(exc).__name__,
-    )
-
-    settings = get_settings()
-    if settings.environment == "dev":
+    if is_dev:
         error_data = ErrorData(
             detail=str(exc),
             type=type(exc).__name__,
             traceback="".join(traceback.format_exception(type(exc), exc, exc.__traceback__)),
+        )
+    else:
+        error_data = ErrorData(
+            detail="An internal error occurred",
+            type=type(exc).__name__,
         )
 
     error_response = JsonRpcErrorResponse(
