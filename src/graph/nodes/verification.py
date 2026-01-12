@@ -16,4 +16,8 @@ async def verification_node(sentence: PipelineSentence) -> PipelineSentence:
     sentence["verdict"] = result["verdict"]
     sentence["suggestion"] = result.get("suggestion")
 
+    # 검증 실패(FALSE) 시 재시도 횟수 증가 (Loop 종료 조건용)
+    if sentence["verdict"] == "FALSE":
+        sentence["retry_count"] = sentence.get("retry_count", 0) + 1
+
     return sentence

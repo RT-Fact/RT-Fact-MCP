@@ -1,5 +1,7 @@
 """Tavily Search API 서비스 래퍼"""
 
+import asyncio
+
 from tavily import AsyncTavilyClient
 
 from graph.state import Source
@@ -17,13 +19,15 @@ class TavilyService:
             api_key: Tavily API 키
         """
         self.client = AsyncTavilyClient(api_key=api_key)
+        # 동시 요청 제한을 위한 세마포어 (최대 3개)
+        self.semaphore = asyncio.Semaphore(3)
 
     async def search(
         self,
         query: str,
         include_domains: list[str] | None = None,  # whitelist
         exclude_domains: list[str] | None = None,  # blacklist
-        max_results: int = 5,
+        max_results: int = 3,
     ) -> list[Source]:
         """
         웹 검색 수행
@@ -40,12 +44,13 @@ class TavilyService:
         include_domains = include_domains or []
         exclude_domains = exclude_domains or []
 
-        response = await self.client.search(
-            query=query,
-            max_results=max_results,
-            include_domains=include_domains if include_domains else None,
-            exclude_domains=exclude_domains if exclude_domains else None,
-        )
+        async with self.semaphore:
+            response = await self.client.search(
+                query=query,
+                max_results=max_results,
+                include_domains=include_domains if include_domains else None,
+                exclude_domains=exclude_domains if exclude_domains else None,
+            )
 
         sources: list[Source] = []
         for result in response.get("results", []):

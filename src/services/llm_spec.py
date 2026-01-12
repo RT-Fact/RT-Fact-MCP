@@ -214,3 +214,54 @@ async def test_extract_sentences_api_error(mocker):
         await service.extract_sentences("테스트")
 
     assert "rate limit" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_extract_sentences_fuzzy_match(mocker):
+    """
+    LLM 출력의 공백이 원본과 다르더라도(Fuzzy Matching)
+    extract_sentences가 인덱스를 올바르게 식별하는지 테스트합니다.
+    """
+    # 1. Setup Data
+    original_text = "Hello\nWorld.  This is a   test."
+    # LLM이 줄바꿈을 공백으로 바꾸고, 다중 공백을 하나로 줄여서 반환한다고 가정
+
+    # 2. Mocking _generate_content
+    # 실제 API 호출 대신, 우리가 원하는 결과를 반환하도록 설정
+    mock_llm_result = llm.ExtractionResult(
+        title="Test Title",
+        sentences=[
+            llm.ExtractedSentence(type="claim", text="Hello World."),
+            llm.ExtractedSentence(type="opinion", text="This is a test."),
+        ],
+    )
+
+    mock_api_response = MagicMock()
+    mock_api_response.text = mock_llm_result.model_dump_json()
+
+    mock_client = MagicMock()
+    mock_client.aio.models.generate_content = AsyncMock(return_value=mock_api_response)
+    mocker.patch.object(llm.genai, "Client", return_value=mock_client)
+
+    # 3. Execution
+    service = llm.GeminiService(api_key="test-key")
+    result = await service.extract_sentences(original_text)
+
+    # 4. Verification
+    sentences = result["sentences"]
+    assert len(sentences) == 2
+
+    # 첫 번째 문장: "Hello\nWorld."
+    # 원본: "Hello\nWorld." (0 ~ 12)
+    s1 = sentences[0]
+    assert s1["text"] == "Hello World."  # LLM 반환 텍스트
+    assert s1["start_index"] == 0
+    assert s1["end_index"] == 12
+    assert original_text[s1["start_index"] : s1["end_index"]] == "Hello\nWorld."
+
+    # 두 번째 문장: "  This is a   test."
+    # 앞의 공백 포함 여부에 따라 달라질 수 있으나, find_fuzzy_indices 로직에 따름
+    # "This is a test." -> 원본 "This is a   test." 매칭
+    s2 = sentences[1]
+    assert s2["text"] == "This is a test."
+    assert original_text[s2["start_index"] : s2["end_index"]] == "This is a   test."
