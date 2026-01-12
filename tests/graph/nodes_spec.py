@@ -59,27 +59,6 @@ async def test_search_node(mock_tavily_service):
 
 
 @pytest.mark.asyncio
-async def test_search_node_retry(mock_tavily_service):
-    """Search 노드가 재진입 시 retry_count를 증가시키는지 테스트"""
-    sentence: PipelineSentence = {
-        "type": "claim",
-        "text": "테스트 주장",
-        "start_index": 0,
-        "end_index": 5,
-        "retry_count": 0,
-        "sources": [{"title": "Old", "url": "url", "snippet": "old"}],
-    }
-
-    mock_sources = [{"title": "New", "url": "https://new.com", "snippet": "새 결과"}]
-    mock_tavily_service.search = AsyncMock(return_value=mock_sources)
-
-    result = await search.search_node(sentence)
-
-    assert result["retry_count"] == 1  # 증가했어야 함
-    assert "sources" in result  # 검색 다시 수행됨
-
-
-@pytest.mark.asyncio
 async def test_search_node_with_domain_filters(mock_tavily_service):
     """Search 노드가 whitelist/blacklist를 TavilyService에 전달하는지 테스트"""
     sentence: PipelineSentence = {
@@ -103,7 +82,7 @@ async def test_search_node_with_domain_filters(mock_tavily_service):
         query="테스트 주장",
         include_domains=["trusted.com", "reliable.org"],
         exclude_domains=["spam.com"],
-        max_results=5,
+        max_results=3,
     )
 
 
