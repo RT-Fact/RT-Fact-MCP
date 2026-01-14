@@ -23,6 +23,9 @@ class Settings(BaseSettings):
 
     environment: Literal["dev", "prod"] = "dev"
 
+    # 향후 API Key 검증 시 BE 서버 호출에 사용
+    backend_url: str = "http://localhost:3000"
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
