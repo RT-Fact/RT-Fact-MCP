@@ -1,8 +1,9 @@
 """환경변수 설정 관리 - pydantic-settings 기반"""
 
 from functools import lru_cache
-from typing import Literal
+from typing import Literal, Self
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,14 +18,23 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
     )
 
-    gemini_api_key: str
-    tavily_api_key: str
+    gemini_api_key: str = ""
+    tavily_api_key: str = ""
     gemini_model: str = "gemini-2.5-flash-lite"
 
     environment: Literal["dev", "prod"] = "dev"
 
     # 향후 API Key 검증 시 BE 서버 호출에 사용
     backend_url: str = "http://localhost:3000"
+
+    @model_validator(mode="after")
+    def check_required_api_keys(self) -> Self:
+        """필수 API 키가 설정되었는지 검증합니다."""
+        if not self.gemini_api_key:
+            raise ValueError("GEMINI_API_KEY 환경변수가 설정되지 않았습니다.")
+        if not self.tavily_api_key:
+            raise ValueError("TAVILY_API_KEY 환경변수가 설정되지 않았습니다.")
+        return self
 
 
 @lru_cache(maxsize=1)

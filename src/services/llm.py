@@ -14,6 +14,7 @@ from tenacity import (
 
 from common.logger import get_logger
 from common.text_utils import find_fuzzy_indices
+from graph.state import Source
 from services.prompts import EXTRACTION_PROMPT, VERIFICATION_PROMPT
 
 log = get_logger(__name__)
@@ -86,6 +87,8 @@ class GeminiService:
 
         response = await self._generate_content(prompt, ExtractionResult)
 
+        if response.text is None:
+            raise ValueError("LLM returned empty response for extraction")
         result = ExtractionResult.model_validate_json(response.text)
 
         # 후처리: 원본 텍스트에서 인덱스 계산
@@ -112,7 +115,7 @@ class GeminiService:
 
         return {"title": result.title, "sentences": sentences_with_indices}
 
-    async def verify_claim(self, claim: str, sources: list[dict]) -> dict:
+    async def verify_claim(self, claim: str, sources: list[Source]) -> dict:
         """
         Claim 검증
 
@@ -126,15 +129,14 @@ class GeminiService:
 
         # sources를 문자열로 포맷팅
         sources_text = "\n\n".join(
-            f"### {s.get('title', 'Untitled')}\n"
-            f"URL: {s.get('url', 'N/A')}\n"
-            f"Content: {s.get('snippet', '')}"
-            for s in sources
+            f"### {s['title']}\nURL: {s['url']}\nContent: {s['snippet']}" for s in sources
         )
 
         prompt = VERIFICATION_PROMPT.format(claim=claim, sources=sources_text)
 
         response = await self._generate_content(prompt, VerificationResult)
 
+        if response.text is None:
+            raise ValueError("LLM returned empty response for verification")
         result = VerificationResult.model_validate_json(response.text)
         return result.model_dump(exclude_none=True)

@@ -48,8 +48,8 @@ class TavilyService:
             response = await self.client.search(
                 query=query,
                 max_results=max_results,
-                include_domains=include_domains if include_domains else None,
-                exclude_domains=exclude_domains if exclude_domains else None,
+                include_domains=include_domains,
+                exclude_domains=exclude_domains,
             )
 
         sources: list[Source] = []

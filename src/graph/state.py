@@ -49,3 +49,10 @@ class FactCheckState(TypedDict):
     blacklist: list[str]  # (Optional) 검색 결과에서 제외할 도메인 목록
     title: str  # Extraction 단계에서 추출한 핵심 주제/제목
     sentences: Annotated[list[PipelineSentence], add]  # 추출된 문장 리스트 (Reducer 적용)
+
+
+class ExtractionOutput(TypedDict):
+    """Extraction 노드의 부분 반환 타입"""
+
+    title: str
+    sentences: list[PipelineSentence]
