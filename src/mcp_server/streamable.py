@@ -1,8 +1,7 @@
 """Streamable HTTP Transport를 위한 FastMCP 설정"""
 
-from typing import Any, cast
-
 from fastmcp import FastMCP
+from pydantic import JsonValue
 
 from mcp_server.handlers import handle_tools_call
 from mcp_server.schemas.mcp import ToolCallParams
@@ -15,7 +14,7 @@ async def factcheck(
     text: str,
     whitelist: list[str] | None = None,
     blacklist: list[str] | None = None,
-) -> dict[str, Any]:
+) -> dict[str, JsonValue]:
     """텍스트의 사실 여부를 검증합니다.
 
     뉴스 기사, 주장, 통계 등 사실 확인이 필요한 텍스트에 사용하세요.
@@ -29,17 +28,14 @@ async def factcheck(
     Returns:
         팩트체크 결과를 담은 딕셔너리
     """
-    params = ToolCallParams(
-        name="factcheck",
-        arguments=cast(
-            dict[str, Any],
-            {
-                "text": text,
-                "whitelist": whitelist or [],
-                "blacklist": blacklist or [],
-            },
-        ),
-    )
+    whitelist_json: list[JsonValue] = list(whitelist or [])
+    blacklist_json: list[JsonValue] = list(blacklist or [])
+    arguments: dict[str, JsonValue] = {
+        "text": text,
+        "whitelist": whitelist_json,
+        "blacklist": blacklist_json,
+    }
+    params = ToolCallParams(name="factcheck", arguments=arguments)
     result, error = await handle_tools_call(params)
 
     if error:
@@ -52,4 +48,4 @@ async def factcheck(
 
 
 # FastAPI에 마운트할 Streamable HTTP 앱
-streamable_app = mcp.http_app(path="/")
+streamable_app = mcp.http_app(path="/stream")

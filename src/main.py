@@ -164,4 +164,4 @@ async def mcp_endpoint(request: Request) -> JSONResponse:
 
 
 # Streamable HTTP Transport (Claude Desktop, Cursor 등 MCP 클라이언트용)
-app.mount("/mcp/stream", streamable_app)
+app.mount("/mcp", streamable_app)
