@@ -10,7 +10,7 @@ Pipeline 결과 → MCP 응답 변환기
 import json
 
 from graph.state import FactCheckState, PipelineSentence
-from mcp.schemas.tools.factcheck import (
+from mcp_server.schemas.tools.factcheck import (
     ClaimSentence,
     FactcheckResult,
     OpinionSentence,
