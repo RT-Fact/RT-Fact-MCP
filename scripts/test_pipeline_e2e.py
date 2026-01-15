@@ -9,7 +9,7 @@ _ = load_dotenv()
 
 import asyncio  # noqa: E402
 
-from graph.state import PipelineSentence  # noqa: E402
+from graph.state import SentenceState  # noqa: E402
 from graph.workflow import create_graph  # noqa: E402
 
 
@@ -51,7 +51,7 @@ async def test():
     # LangGraph ainvoke 반환 타입이 dict[str, Any]이므로 명시적 타입 변환
     title: str = result["title"]
     original_text: str = result["original_text"]
-    sentences: list[PipelineSentence] = result["sentences"]
+    sentences: list[SentenceState] = result["sentences"]
 
     print(f"✓ 제목: {title}")
     print(f"✓ 원문: {original_text}")

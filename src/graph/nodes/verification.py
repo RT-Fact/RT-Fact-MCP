@@ -1,8 +1,8 @@
-from graph.state import PipelineSentence
+from graph.state import SentenceState
 from services.providers import get_gemini_service
 
 
-async def verification_node(state: PipelineSentence) -> PipelineSentence:
+async def verification_node(state: SentenceState) -> SentenceState:
     """
     Verification Node: claim 문장과 sources를 바탕으로 진실 여부를 판정합니다.
     GeminiService를 사용해 실제 LLM 호출 (싱글톤 인스턴스 사용)

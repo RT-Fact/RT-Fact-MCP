@@ -9,7 +9,7 @@ Pipeline 결과 → MCP 응답 변환기
 
 import json
 
-from graph.state import FactCheckState, PipelineSentence
+from graph.state import FactCheckState, SentenceState
 from mcp_server.schemas.tools.factcheck import (
     ClaimSentence,
     FactcheckResult,
@@ -18,7 +18,7 @@ from mcp_server.schemas.tools.factcheck import (
 )
 
 
-def transform_claim(sentence: PipelineSentence) -> ClaimSentence:
+def transform_claim(sentence: SentenceState) -> ClaimSentence:
     """claim 문장을 MCP 응답 형식으로 변환."""
     return {
         "type": "claim",
@@ -31,7 +31,7 @@ def transform_claim(sentence: PipelineSentence) -> ClaimSentence:
     }
 
 
-def transform_opinion(sentence: PipelineSentence) -> OpinionSentence:
+def transform_opinion(sentence: SentenceState) -> OpinionSentence:
     """opinion 문장을 MCP 응답 형식으로 변환."""
     return {
         "type": "opinion",
