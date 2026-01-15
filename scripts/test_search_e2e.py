@@ -7,14 +7,14 @@ load_dotenv()
 import asyncio  # noqa: E402
 
 from graph.nodes.search import search_node  # noqa: E402
-from graph.state import PipelineSentence  # noqa: E402
+from graph.state import SentenceState  # noqa: E402
 
 """사용법(터미널): PYTHONPATH=src poetry run python scripts/test_search_e2e.py"""
 
 
 async def test():
     # 테스트할 claim 문장들
-    test_sentences: list[PipelineSentence] = [
+    test_sentences: list[SentenceState] = [
         {
             "type": "claim",
             "text": "비트코인은 2009년 사토시 나카모토에 의해 만들어졌습니다.",
@@ -49,11 +49,11 @@ async def test():
     print("=" * 60)
 
     for i, sentence in enumerate(test_sentences, 1):
-        print(f"\n[Test {i}] Query: {sentence['text']}")
+        print(f"\n[Test {i}] Query: {sentence.get('text')}")
         if sentence.get("whitelist"):
-            print(f"  whitelist: {sentence['whitelist']}")
+            print(f"  whitelist: {sentence.get('whitelist')}")
         if sentence.get("blacklist"):
-            print(f"  blacklist: {sentence['blacklist']}")
+            print(f"  blacklist: {sentence.get('blacklist')}")
         print("-" * 40)
 
         try:

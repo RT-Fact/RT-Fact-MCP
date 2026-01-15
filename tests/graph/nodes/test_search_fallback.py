@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, call, patch
 import pytest
 
 from graph.nodes.search import search_node
-from graph.state import PipelineSentence
+from graph.state import SentenceState
 
 
 @pytest.fixture
@@ -18,7 +18,7 @@ def mock_tavily_service():
 async def test_search_node_whitelist_success(mock_tavily_service):
     """Scenario 1: Whitelist 검색 성공 -> 1회 호출 후 즉시 반환"""
     # Given
-    sentence: PipelineSentence = {
+    sentence: SentenceState = {
         "text": "test query",
         "whitelist": ["trusted.com"],
         "blacklist": ["bad.com"],
@@ -38,14 +38,14 @@ async def test_search_node_whitelist_success(mock_tavily_service):
         exclude_domains=["bad.com"],
         max_results=3,
     )
-    assert len(result["sources"]) == 1
+    assert len(result.get("sources", [])) == 1
 
 
 @pytest.mark.asyncio
 async def test_search_node_fallback_execution(mock_tavily_service):
     """Scenario 2: Whitelist 실패(0건) -> Graylist 자동 재검색 (In-Node)"""
     # Given
-    sentence: PipelineSentence = {
+    sentence: SentenceState = {
         "text": "test query",
         "whitelist": ["trusted.com"],
         "blacklist": ["bad.com"],
@@ -81,5 +81,6 @@ async def test_search_node_fallback_execution(mock_tavily_service):
     ]
     mock_tavily_service.search.assert_has_awaits(expected_calls)
 
-    assert len(result["sources"]) == 1
-    assert result["sources"][0]["title"] == "Gray Result"
+    sources = result.get("sources", [])
+    assert len(sources) == 1
+    assert sources[0]["title"] == "Gray Result"

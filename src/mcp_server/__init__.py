@@ -1,7 +1,7 @@
 """MCP 프로토콜 계층"""
 
-from mcp.errors import JsonRpcErrorCode
-from mcp.schemas import (
+from mcp_server.errors import JsonRpcErrorCode
+from mcp_server.schemas import (
     ContentItem,
     FactcheckArguments,
     JsonRpcError,

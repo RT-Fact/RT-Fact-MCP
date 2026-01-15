@@ -26,3 +26,9 @@ repos:
         language: system
         stages: [pre-push]
         pass_filenames: false
+      - id: pyright
+        name: pyright type check
+        entry: poetry run pyright
+        language: system
+        stages: [pre-push]
+        pass_filenames: false

@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
-from graph.state import PipelineSentence
+from graph.state import SentenceState
 from graph.workflow import create_graph
 
 _ = load_dotenv()
@@ -55,7 +55,7 @@ async def test_fallback():
         }
     )
 
-    sentences: list[PipelineSentence] = result["sentences"]
+    sentences: list[SentenceState] = result["sentences"]
 
     # 3. 결과 검증 및 출력
     print("\n[검증 결과]")

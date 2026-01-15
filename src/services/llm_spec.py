@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from graph.state import Source
 from services import llm
 
 
@@ -43,7 +44,7 @@ async def test_gemini_service_verify_claim(mocker):
     )
 
     service = llm.GeminiService(api_key="test-key")
-    mock_sources = [
+    mock_sources: list[Source] = [
         {"title": "Example Source", "url": "https://example.com", "snippet": "관련 정보..."}
     ]
     result = await service.verify_claim("테스트 주장", mock_sources)
@@ -64,11 +65,12 @@ async def test_verify_claim_true_verdict(mocker):
     mocker.patch.object(llm.genai, "Client", return_value=mock_client)
 
     service = llm.GeminiService(api_key="test-key")
+    sources: list[Source] = [
+        {"title": "Wikipedia", "url": "https://...", "snippet": "서울은 대한민국의 수도..."}
+    ]
     result = await service.verify_claim(
         claim="서울은 대한민국의 수도이다.",
-        sources=[
-            {"title": "Wikipedia", "url": "https://...", "snippet": "서울은 대한민국의 수도..."}
-        ],
+        sources=sources,
     )
 
     assert result["verdict"] == "TRUE"
@@ -90,11 +92,12 @@ async def test_verify_claim_false_verdict_with_suggestion(mocker):
     mocker.patch.object(llm.genai, "Client", return_value=mock_client)
 
     service = llm.GeminiService(api_key="test-key")
+    sources: list[Source] = [
+        {"title": "Bitcoin Wiki", "url": "https://...", "snippet": "2009년 1월에 출시..."}
+    ]
     result = await service.verify_claim(
         claim="비트코인은 2008년에 출시되었다.",
-        sources=[
-            {"title": "Bitcoin Wiki", "url": "https://...", "snippet": "2009년 1월에 출시..."}
-        ],
+        sources=sources,
     )
 
     assert result["verdict"] == "FALSE"

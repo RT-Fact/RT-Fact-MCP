@@ -10,14 +10,15 @@ from pydantic import BaseModel, ValidationError
 
 from common.logger import configure_logger, get_logger
 from config import get_settings
-from mcp import (
+from mcp_server import (
     JsonRpcError,
     JsonRpcErrorCode,
     JsonRpcErrorResponse,
     JsonRpcRequest,
     JsonRpcSuccessResponse,
 )
-from mcp.router import route_request
+from mcp_server.router import route_request
+from mcp_server.streamable import streamable_app
 
 
 class ErrorData(BaseModel):
@@ -36,9 +37,11 @@ log = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
-    """앱 생명주기 관리 - 시작 시 환경변수 검증"""
+    """앱 생명주기 관리 - 시작 시 환경변수 검증 및 FastMCP 초기화"""
     get_settings()  # Fail-fast: 필수 환경변수 누락 시 즉시 실패
-    yield
+    # FastMCP의 lifespan을 함께 실행 (StreamableHTTPSessionManager 초기화)
+    async with streamable_app.lifespan(app):
+        yield
 
 
 app = FastAPI(title="RT-Fact MCP Server", lifespan=lifespan)
@@ -158,3 +161,7 @@ async def mcp_endpoint(request: Request) -> JSONResponse:
         result=result,
     )
     return JSONResponse(content=success_response.model_dump())
+
+
+# Streamable HTTP Transport (Claude Desktop, Cursor 등 MCP 클라이언트용)
+app.mount("/mcp", streamable_app)

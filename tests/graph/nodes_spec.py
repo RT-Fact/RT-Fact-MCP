@@ -5,12 +5,12 @@ from unittest.mock import AsyncMock
 import pytest
 
 from graph.nodes import extraction, search, verification
-from graph.state import FactCheckState, PipelineSentence
+from graph.state import FactCheckState, SentenceState
 
 
 @pytest.mark.asyncio
 async def test_extraction_node(mock_gemini_service):
-    """Extraction 노드가 PipelineSentence를 잘 생성하는지 테스트"""
+    """Extraction 노드가 SentenceState를 잘 생성하는지 테스트"""
     initial_state: FactCheckState = {
         "original_text": "테스트 텍스트",
         "title": "",
@@ -40,7 +40,7 @@ async def test_extraction_node(mock_gemini_service):
 @pytest.mark.asyncio
 async def test_search_node(mock_tavily_service):
     """Search 노드가 검색을 수행하고 sources를 추가하는지 테스트"""
-    sentence: PipelineSentence = {
+    sentence: SentenceState = {
         "type": "claim",
         "text": "테스트 주장",
         "start_index": 0,
@@ -55,13 +55,13 @@ async def test_search_node(mock_tavily_service):
 
     assert "sources" in result
     assert len(result["sources"]) > 0
-    assert result["retry_count"] == 0  # 첫 진입이므로 증가 안 함
+    assert result.get("retry_count") == 0  # 첫 진입이므로 증가 안 함
 
 
 @pytest.mark.asyncio
 async def test_search_node_with_domain_filters(mock_tavily_service):
     """Search 노드가 whitelist/blacklist를 TavilyService에 전달하는지 테스트"""
-    sentence: PipelineSentence = {
+    sentence: SentenceState = {
         "type": "claim",
         "text": "테스트 주장",
         "start_index": 0,
@@ -89,7 +89,7 @@ async def test_search_node_with_domain_filters(mock_tavily_service):
 @pytest.mark.asyncio
 async def test_verification_node_true(mock_gemini_service):
     """Verification 노드가 TRUE verdict를 설정하는지 테스트"""
-    sentence: PipelineSentence = {
+    sentence: SentenceState = {
         "type": "claim",
         "text": "테스트 주장",
         "start_index": 0,
@@ -103,14 +103,14 @@ async def test_verification_node_true(mock_gemini_service):
 
     result = await verification.verification_node(sentence)
 
-    assert result["verdict"] == "TRUE"
-    assert result["suggestion"] is None
+    assert result.get("verdict") == "TRUE"
+    assert result.get("suggestion") is None
 
 
 @pytest.mark.asyncio
 async def test_verification_node_false_with_suggestion(mock_gemini_service):
     """Verification 노드가 FALSE verdict와 suggestion을 설정하는지 테스트"""
-    sentence: PipelineSentence = {
+    sentence: SentenceState = {
         "type": "claim",
         "text": "비트코인은 2008년에 출시되었다.",
         "start_index": 0,
@@ -124,5 +124,5 @@ async def test_verification_node_false_with_suggestion(mock_gemini_service):
 
     result = await verification.verification_node(sentence)
 
-    assert result["verdict"] == "FALSE"
-    assert result["suggestion"] == "비트코인은 2009년에 출시되었습니다."
+    assert result.get("verdict") == "FALSE"
+    assert result.get("suggestion") == "비트코인은 2009년에 출시되었습니다."

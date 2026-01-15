@@ -6,7 +6,7 @@ from langgraph.types import Send
 from graph.nodes.extraction import extraction_node
 from graph.nodes.search import search_node
 from graph.nodes.verification import verification_node
-from graph.state import FactCheckState, PipelineSentence
+from graph.state import FactCheckState, SentenceState
 
 
 def continue_to_processing(state: FactCheckState):
@@ -32,15 +32,15 @@ def continue_to_processing(state: FactCheckState):
     return start_nodes
 
 
-def check_verification_result(sentence: PipelineSentence):
+def check_verification_result(state: SentenceState):
     """
     [Conditional Edge for SubGraph]
     검증 결과가 FALSE이고 재시도 횟수가 남았으면 Search로 루프(Loop)
     """
     MAX_RETRIES = 1
 
-    if sentence.get("verdict") == "FALSE":
-        current_retries = sentence.get("retry_count", 0)
+    if state.get("verdict") == "FALSE":
+        current_retries = state.get("retry_count", 0)
         if current_retries < MAX_RETRIES:
             # retry_count 증가는 여기서 할 수 없으므로(상태 변경 불가),
             # search_node에서 수행하거나 별도 노드가 필요함.
@@ -52,7 +52,7 @@ def check_verification_result(sentence: PipelineSentence):
 
 def create_processing_subgraph():
     """문장 처리용 SubGraph 생성 (Search -> Verify -> Loop)"""
-    workflow = StateGraph(PipelineSentence)
+    workflow = StateGraph(SentenceState)
 
     workflow.add_node("search", search_node)
     workflow.add_node("verification", verification_node)
@@ -67,13 +67,13 @@ def create_processing_subgraph():
     return workflow.compile()
 
 
-async def processing_node(sentence: PipelineSentence):
+async def processing_node(state: SentenceState):
     """
     SubGraph를 실행하고 결과를 Main Graph의 Reducer 형식에 맞게 반환하는 래퍼 노드
     """
     processor = create_processing_subgraph()
-    result = await processor.ainvoke(sentence)
-    # result는 PipelineSentence (SubGraph의 최종 State)
+    result = await processor.ainvoke(state)
+    # result는 SentenceState (SubGraph의 최종 State)
     return {"sentences": [result]}
 
 
