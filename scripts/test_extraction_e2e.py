@@ -7,6 +7,7 @@ load_dotenv()
 import asyncio  # noqa: E402
 
 from graph.nodes.extraction import extraction_node  # noqa: E402
+from graph.state import FactCheckState  # noqa: E402
 
 """사용법(터미널): PYTHONPATH=src poetry run python scripts/test_extraction_e2e.py"""
 
@@ -28,7 +29,7 @@ async def test():
         "한국 음식은 세계에서 가장 맛있습니다."
     )
 
-    state = {
+    state: FactCheckState = {
         "original_text": original_text,
         "title": "",
         "sentences": [],
@@ -44,10 +45,10 @@ async def test():
 
     all_valid = True
     for s in result["sentences"]:
-        type_str = s["type"]
-        text_str = s["text"]
-        start = s["start_index"]
-        end = s["end_index"]
+        type_str = s.get("type")
+        text_str = s.get("text")
+        start = s.get("start_index")
+        end = s.get("end_index")
 
         # -1 인덱스 처리: LLM이 원본에서 문장을 찾지 못한 경우
         if start == -1:

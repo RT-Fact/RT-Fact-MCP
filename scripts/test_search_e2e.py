@@ -49,11 +49,11 @@ async def test():
     print("=" * 60)
 
     for i, sentence in enumerate(test_sentences, 1):
-        print(f"\n[Test {i}] Query: {sentence['text']}")
+        print(f"\n[Test {i}] Query: {sentence.get('text')}")
         if sentence.get("whitelist"):
-            print(f"  whitelist: {sentence['whitelist']}")
+            print(f"  whitelist: {sentence.get('whitelist')}")
         if sentence.get("blacklist"):
-            print(f"  blacklist: {sentence['blacklist']}")
+            print(f"  blacklist: {sentence.get('blacklist')}")
         print("-" * 40)
 
         try:

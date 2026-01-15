@@ -38,7 +38,7 @@ async def test_search_node_whitelist_success(mock_tavily_service):
         exclude_domains=["bad.com"],
         max_results=3,
     )
-    assert len(result["sources"]) == 1
+    assert len(result.get("sources", [])) == 1
 
 
 @pytest.mark.asyncio
@@ -81,5 +81,6 @@ async def test_search_node_fallback_execution(mock_tavily_service):
     ]
     mock_tavily_service.search.assert_has_awaits(expected_calls)
 
-    assert len(result["sources"]) == 1
-    assert result["sources"][0]["title"] == "Gray Result"
+    sources = result.get("sources", [])
+    assert len(sources) == 1
+    assert sources[0]["title"] == "Gray Result"

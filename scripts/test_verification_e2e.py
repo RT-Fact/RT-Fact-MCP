@@ -71,7 +71,7 @@ async def test():
     print("=" * 60)
 
     for i, sentence in enumerate(test_sentences, 1):
-        print(f"\n[Test {i}] Claim: {sentence['text']}")
+        print(f"\n[Test {i}] Claim: {sentence.get('text')}")
         print(f"  Sources: {len(sentence.get('sources', []))}개")
         print("-" * 40)
 
