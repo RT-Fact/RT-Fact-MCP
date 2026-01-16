@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from graph.state import FactCheckState
-from graph.workflow import create_graph
+from factcheck.pipeline import create_graph
+from factcheck.state import FactCheckState
 
 
 @pytest.mark.asyncio

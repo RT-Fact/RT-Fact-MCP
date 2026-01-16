@@ -2,9 +2,9 @@
 
 from pydantic import JsonValue, ValidationError
 
-from mcp_server.errors import JsonRpcErrorCode
-from mcp_server.handlers import handle_tools_call, handle_tools_list
-from mcp_server.schemas.mcp import ToolCallParams, ToolsCallResult, ToolsListResult
+from application.handlers import handle_tools_call, handle_tools_list
+from common.errors import JsonRpcErrorCode
+from transport.rest.schemas.mcp import ToolCallParams, ToolsCallResult, ToolsListResult
 
 McpResult = ToolsListResult | ToolsCallResult
 McpError = tuple[int, str]  # (code, message)

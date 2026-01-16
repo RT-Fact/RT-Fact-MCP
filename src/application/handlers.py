@@ -2,19 +2,19 @@
 
 from pydantic import TypeAdapter, ValidationError
 
+from application.schemas.factcheck import FactcheckArguments
+from application.transformers import result_to_json_content, transform_pipeline_result
+from common.errors import JsonRpcErrorCode
 from common.logger import get_logger
-from graph.state import FactCheckState
-from graph.workflow import create_graph
-from mcp_server.errors import JsonRpcErrorCode
-from mcp_server.schemas.mcp import (
+from factcheck.pipeline import create_graph
+from factcheck.state import FactCheckState
+from transport.rest.schemas.mcp import (
     ContentItem,
     ToolCallParams,
     ToolDefinition,
     ToolsCallResult,
     ToolsListResult,
 )
-from mcp_server.schemas.tools.factcheck import FactcheckArguments
-from mcp_server.transformers import result_to_json_content, transform_pipeline_result
 
 McpError = tuple[int, str]  # (code, message)
 FACTCHECK_TOOL_NAME = "factcheck"

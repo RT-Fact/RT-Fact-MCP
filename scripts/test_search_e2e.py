@@ -6,8 +6,8 @@ load_dotenv()
 
 import asyncio  # noqa: E402
 
-from graph.nodes.search import search_node  # noqa: E402
-from graph.state import SentenceState  # noqa: E402
+from factcheck.nodes.search import search_node  # noqa: E402
+from factcheck.state import SentenceState  # noqa: E402
 
 """사용법(터미널): PYTHONPATH=src poetry run python scripts/test_search_e2e.py"""
 

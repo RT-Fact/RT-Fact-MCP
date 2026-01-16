@@ -3,8 +3,8 @@
 from fastmcp import FastMCP
 from pydantic import JsonValue
 
-from mcp_server.handlers import handle_tools_call
-from mcp_server.schemas.mcp import ToolCallParams
+from application.handlers import handle_tools_call
+from transport.rest.schemas.mcp import ToolCallParams
 
 mcp = FastMCP("RT-Fact")
 

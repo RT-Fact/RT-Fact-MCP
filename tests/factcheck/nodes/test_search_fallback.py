@@ -2,13 +2,13 @@ from unittest.mock import AsyncMock, call, patch
 
 import pytest
 
-from graph.nodes.search import search_node
-from graph.state import SentenceState
+from factcheck.nodes.search import search_node
+from factcheck.state import SentenceState
 
 
 @pytest.fixture
 def mock_tavily_service():
-    with patch("graph.nodes.search.get_tavily_service") as mock_get:
+    with patch("factcheck.nodes.search.get_tavily_service") as mock_get:
         service_mock = AsyncMock()
         mock_get.return_value = service_mock
         yield service_mock

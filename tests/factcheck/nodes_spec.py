@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from graph.nodes import extraction, search, verification
-from graph.state import FactCheckState, SentenceState
+from factcheck.nodes import extraction, search, verification
+from factcheck.state import FactCheckState, SentenceState
 
 
 @pytest.mark.asyncio

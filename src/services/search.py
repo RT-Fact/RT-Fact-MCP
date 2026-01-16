@@ -4,7 +4,7 @@ import asyncio
 
 from tavily import AsyncTavilyClient
 
-from graph.state import Source
+from factcheck.state import Source
 
 # Snippet 최대 길이 (검색 결과 미리보기용)
 SNIPPET_MAX_LENGTH = 200

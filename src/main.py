@@ -8,17 +8,17 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ValidationError
 
+from common.errors import JsonRpcErrorCode
 from common.logger import configure_logger, get_logger
 from config import get_settings
-from mcp_server import (
+from transport.mcp.server import streamable_app
+from transport.rest.router import route_request
+from transport.rest.schemas.jsonrpc import (
     JsonRpcError,
-    JsonRpcErrorCode,
     JsonRpcErrorResponse,
     JsonRpcRequest,
     JsonRpcSuccessResponse,
 )
-from mcp_server.router import route_request
-from mcp_server.streamable import streamable_app
 
 
 class ErrorData(BaseModel):

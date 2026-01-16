@@ -1,4 +1,4 @@
-from graph.state import ExtractionState, FactCheckState
+from factcheck.state import ExtractionState, FactCheckState
 from services.providers import get_gemini_service
 
 
