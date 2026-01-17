@@ -3,7 +3,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -94,17 +94,20 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    """서버 상태 확인용 엔드포인트"""
+    """서버 상태 확인용 엔드포인트 (AWS ALB 헬스 체크 호환)"""
     try:
         settings = get_settings()
-        has_api_key = bool(settings.gemini_api_key or settings.tavily_api_key)
-    except Exception:
-        has_api_key = False
-    return {
-        "status": "ok",
-        "version": "0.1.0",
-        "env_check": "loaded" if has_api_key else "missing_keys",
-    }
+        if not (settings.gemini_api_key and settings.tavily_api_key):
+            return JSONResponse(
+                content={"status": "degraded", "reason": "missing_api_keys"},
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        return {"status": "ok", "version": "0.1.0", "environment": settings.environment}
+    except Exception as e:
+        return JSONResponse(
+            content={"status": "error", "reason": str(e)},
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
 
 
 # NestJS 백엔드용 (내부, 인증 없음)
