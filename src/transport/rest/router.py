@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from pydantic import JsonValue, ValidationError
 
 from application.handlers import handle_tools_call, handle_tools_list
+from application.schemas.mcp import ToolCallParams, ToolsCallResult, ToolsListResult
 from common.errors import JsonRpcErrorCode
 from transport.rest.schemas.jsonrpc import (
     JsonRpcError,
@@ -14,7 +15,6 @@ from transport.rest.schemas.jsonrpc import (
     JsonRpcRequest,
     JsonRpcSuccessResponse,
 )
-from transport.rest.schemas.mcp import ToolCallParams, ToolsCallResult, ToolsListResult
 
 McpResult = ToolsListResult | ToolsCallResult
 McpError = tuple[int, str]  # (code, message)
