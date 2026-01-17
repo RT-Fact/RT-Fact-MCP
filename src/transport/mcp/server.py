@@ -48,4 +48,4 @@ async def factcheck(
 
 
 # FastAPI에 마운트할 Streamable HTTP 앱
-streamable_app = mcp.http_app(path="/stream")
+streamable_app = mcp.http_app(path="/")
