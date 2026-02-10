@@ -24,8 +24,9 @@ class Settings(BaseSettings):
 
     environment: Literal["dev", "prod"] = "dev"
 
-    # 향후 API Key 검증 시 BE 서버 호출에 사용
     backend_url: str = "http://localhost:3000"
+    internal_api_secret: str = ""
+    frontend_url: str = "https://rt-fact.com"
 
     @model_validator(mode="after")
     def check_required_api_keys(self) -> Self:
