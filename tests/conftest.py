@@ -37,8 +37,8 @@ def mock_gemini_service():
     """
     mock = MagicMock(spec=GeminiService)
     with (
-        patch("graph.nodes.extraction.get_gemini_service", return_value=mock),
-        patch("graph.nodes.verification.get_gemini_service", return_value=mock),
+        patch("factcheck.nodes.extraction.get_gemini_service", return_value=mock),
+        patch("factcheck.nodes.verification.get_gemini_service", return_value=mock),
     ):
         yield mock
 
@@ -54,5 +54,5 @@ def mock_tavily_service():
             mock_tavily_service.search = AsyncMock(return_value=[...])
     """
     mock = MagicMock(spec=TavilyService)
-    with patch("graph.nodes.search.get_tavily_service", return_value=mock):
+    with patch("factcheck.nodes.search.get_tavily_service", return_value=mock):
         yield mock

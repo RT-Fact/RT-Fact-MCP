@@ -8,8 +8,8 @@ from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
-from graph.state import SentenceState
-from graph.workflow import create_graph
+from factcheck.pipeline import create_graph
+from factcheck.state import SentenceState
 
 _ = load_dotenv()
 

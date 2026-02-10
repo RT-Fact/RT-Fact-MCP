@@ -14,7 +14,7 @@ from tenacity import (
 
 from common.logger import get_logger
 from common.text_utils import find_fuzzy_indices
-from graph.state import Source
+from factcheck.state import Source
 from services.prompts import EXTRACTION_PROMPT, VERIFICATION_PROMPT
 
 log = get_logger(__name__)

@@ -3,10 +3,10 @@
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Send
 
-from graph.nodes.extraction import extraction_node
-from graph.nodes.search import search_node
-from graph.nodes.verification import verification_node
-from graph.state import FactCheckState, SentenceState
+from factcheck.nodes.extraction import extraction_node
+from factcheck.nodes.search import search_node
+from factcheck.nodes.verification import verification_node
+from factcheck.state import FactCheckState, SentenceState
 
 
 def continue_to_processing(state: FactCheckState):

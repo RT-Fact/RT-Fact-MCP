@@ -16,7 +16,7 @@ def client():
 def test_global_exception_handler_returns_json_rpc_error(client: TestClient):
     """전역 예외 처리기가 JSON-RPC 규격의 에러를 반환하는지 테스트"""
     # 유효하지 않은 JSON 전송 -> JSONDecodeError
-    response = client.post("/mcp", content="{invalid-json}")
+    response = client.post("/api/factcheck", content="{invalid-json}")
     assert response.status_code == 200  # JSON-RPC는 에러도 200 OK로 줍니다 (보통)
     data = response.json()
     assert data["error"]["code"] == -32700  # Parse Error

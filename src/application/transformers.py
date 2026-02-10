@@ -9,13 +9,13 @@ Pipeline 결과 → MCP 응답 변환기
 
 import json
 
-from graph.state import FactCheckState, SentenceState
-from mcp_server.schemas.tools.factcheck import (
+from application.schemas.factcheck import (
     ClaimSentence,
     FactcheckResult,
     OpinionSentence,
     ResultSentence,
 )
+from factcheck.state import FactCheckState, SentenceState
 
 
 def transform_claim(sentence: SentenceState) -> ClaimSentence:

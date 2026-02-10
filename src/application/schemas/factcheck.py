@@ -4,7 +4,7 @@ from typing import Literal, TypedDict
 
 from pydantic import BaseModel
 
-from graph.state import Source
+from factcheck.state import Source
 
 # ============================================================
 # Input (요청)

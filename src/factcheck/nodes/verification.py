@@ -1,4 +1,4 @@
-from graph.state import SentenceState
+from factcheck.state import SentenceState
 from services.providers import get_gemini_service
 
 

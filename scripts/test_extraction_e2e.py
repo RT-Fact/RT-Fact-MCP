@@ -6,8 +6,8 @@ load_dotenv()
 
 import asyncio  # noqa: E402
 
-from graph.nodes.extraction import extraction_node  # noqa: E402
-from graph.state import FactCheckState  # noqa: E402
+from factcheck.nodes.extraction import extraction_node  # noqa: E402
+from factcheck.state import FactCheckState  # noqa: E402
 
 """사용법(터미널): PYTHONPATH=src poetry run python scripts/test_extraction_e2e.py"""
 

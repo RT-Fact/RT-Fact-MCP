@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, Field, JsonValue
 
-from mcp_server.schemas.mcp import ToolsCallResult, ToolsListResult
+from application.schemas.mcp import ToolsCallResult, ToolsListResult
 
 
 class JsonRpcRequest(BaseModel):

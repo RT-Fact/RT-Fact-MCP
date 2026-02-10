@@ -9,8 +9,8 @@ _ = load_dotenv()
 
 import asyncio  # noqa: E402
 
-from graph.state import SentenceState  # noqa: E402
-from graph.workflow import create_graph  # noqa: E402
+from factcheck.pipeline import create_graph  # noqa: E402
+from factcheck.state import SentenceState  # noqa: E402
 
 
 async def test():

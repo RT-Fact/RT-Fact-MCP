@@ -14,7 +14,7 @@ async def test_tools_list_returns_factcheck_tool():
     """tools/list 요청 시 factcheck 도구 반환"""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
-            "/mcp",
+            "/api/factcheck",
             json={"jsonrpc": "2.0", "id": 1, "method": "tools/list"},
         )
 
@@ -55,7 +55,7 @@ async def test_tools_call_success_returns_factcheck_result(
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
-            "/mcp",
+            "/api/factcheck",
             json={
                 "jsonrpc": "2.0",
                 "id": 2,
@@ -93,7 +93,7 @@ async def test_tools_call_pipeline_failure_returns_internal_error(
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
-            "/mcp",
+            "/api/factcheck",
             json={
                 "jsonrpc": "2.0",
                 "id": 3,
@@ -114,7 +114,7 @@ async def test_tools_call_invalid_arguments_returns_error():
     """tools/call 필수 인자 누락 시 Invalid Params 반환"""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
-            "/mcp",
+            "/api/factcheck",
             json={
                 "jsonrpc": "2.0",
                 "id": 4,
@@ -138,7 +138,7 @@ async def test_tools_call_unknown_tool_returns_error():
     """tools/call 알 수 없는 도구 요청 시 Invalid Params 반환"""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
-            "/mcp",
+            "/api/factcheck",
             json={
                 "jsonrpc": "2.0",
                 "id": 5,
@@ -162,7 +162,7 @@ async def test_invalid_json_returns_parse_error():
     """잘못된 JSON 요청 시 Parse error (-32700)"""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
-            "/mcp",
+            "/api/factcheck",
             content="invalid json",
             headers={"Content-Type": "application/json"},
         )
@@ -177,7 +177,7 @@ async def test_unknown_method_returns_method_not_found():
     """알 수 없는 method 요청 시 Method not found (-32601)"""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
-            "/mcp",
+            "/api/factcheck",
             json={"jsonrpc": "2.0", "id": 3, "method": "unknown/method"},
         )
 
